@@ -36,6 +36,18 @@ func (c *Connector) SetWriteDeadLine(){
 	c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
 }
 
+func (c *Connector) Close()error{
+	return c.conn.Close()
+}
+
+func (c *Connector) Ping()error{
+	return nil
+}
+
+func (c *Connector) GetConn() *net.UDPConn{
+	return c.conn
+}
+
 func NewConnector(addr *net.UDPAddr, timeout *timeout.Timeout) *Connector {
 	return &Connector{
 		addr: addr,
