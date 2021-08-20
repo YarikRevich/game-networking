@@ -5,14 +5,18 @@ import (
 	"github.com/go-ping/ping"
 )
 
+const (
+	defaultPingerAddr = "www.google.com"
+)
+
 type Timeout struct {
-	addr string //Addr for pinger
+	pAddr string
 	read int
 	write int
 }
 
 func (t *Timeout) getPingStatistics()(*ping.Statistics, error){
-	p, err := ping.NewPinger(t.addr)
+	p, err := ping.NewPinger(t.pAddr)
 	if err != nil{
 		return nil, err
 	}
@@ -42,10 +46,10 @@ func (t *Timeout) GetWriteTimeout()int{
 	return t.write
 }
 
-func NewTimeout(addr string)*Timeout{
-	var a string = addr
-	if reflect.ValueOf(addr).IsZero(){
-		a = "www.google.com"
+func NewTimeout(pAddr string)*Timeout{
+	var pingerAddr string = pAddr
+	if reflect.ValueOf(pAddr).IsZero(){
+		pingerAddr = defaultPingerAddr
 	}
-	return &Timeout{addr: a}
+	return &Timeout{pAddr: pingerAddr}
 }

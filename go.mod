@@ -1,4 +1,4 @@
-module github.com/YarikRevich/game-client-networking
+module github.com/YarikRevich/game-networking
 
 go 1.16
 
