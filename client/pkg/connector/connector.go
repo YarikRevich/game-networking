@@ -5,7 +5,6 @@ import (
 
 	"github.com/YarikRevich/game-networking/client/internal/establisher"
 	"github.com/YarikRevich/game-networking/client/internal/timeout"
-	"github.com/YarikRevich/game-networking/client/internal/workers"
 	"github.com/YarikRevich/game-networking/client/pkg/config"
 	"github.com/YarikRevich/game-networking/client/tools"
 )
@@ -21,11 +20,6 @@ func Connect(conf config.Config) (*establisher.Connector, error){
 		return nil, err
 	}
 
-	// wmanager := workers.New(conf.WorkersCount, conn.GetConn())
-
-	conn := establisher.NewConnector(
-		addr, timeout.NewTimeout(conf.PingerAddr))
-
-
-	return conn, nil
+	return establisher.NewConnector(
+		addr, timeout.NewTimeout(conf.PingerAddr)), nil
 }
