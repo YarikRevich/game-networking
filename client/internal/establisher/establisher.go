@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/YarikRevich/game-networking/client/internal/timeout"
+	"github.com/YarikRevich/game-networking/client/internal/workers"
 )
 
 type Connector struct {
 	addr *net.UDPAddr
 	conn *net.UDPConn
 	timeout *timeout.Timeout
+	wmanager *workers.WorkerManager
 }
 
 func (c *Connector) EstablishConnection() error {
@@ -26,6 +28,10 @@ func (c *Connector) InitTimeouts() error{
 	return c.timeout.EstimateProperTimout()
 } 
 
+func (c *Connector) InitWorkers(count int){
+	c.wmanager = workers.New(count, c.GetConn())
+}
+
 func (c *Connector) SetReadDeadLine(){
 	rt := c.timeout.GetReadTimeout()
 	c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
@@ -40,12 +46,12 @@ func (c *Connector) Close()error{
 	return c.conn.Close()
 }
 
-func (c *Connector) Ping()error{
-	return nil
-}
-
 func (c *Connector) GetConn() *net.UDPConn{
 	return c.conn
+}
+
+func (c *Connector) Ping() error{
+	return c.wmanager.Ping()
 }
 
 func NewConnector(addr *net.UDPAddr, timeout *timeout.Timeout) *Connector {

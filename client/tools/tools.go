@@ -1,6 +1,9 @@
 package tools
 
-import "strings"
+import (
+	"strings"
+	"github.com/google/uuid"
+)
 
 func CreateAddr(ip string, port string) (string, error) {
 	var addr strings.Builder
@@ -17,4 +20,12 @@ func CreateAddr(ip string, port string) (string, error) {
 	}
 
 	return addr.String(), nil
+}
+
+func CreateUUID() (string, error){
+	id, err := uuid.NewUUID()
+	if err != nil{
+		return "", err
+	}
+	return id.String(), nil
 }
