@@ -3,8 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/YarikRevich/game-networking/client/pkg/connector"
+	"github.com/YarikRevich/game-networking/client/internal/request"
 	"github.com/YarikRevich/game-networking/client/pkg/config"
+	"github.com/YarikRevich/game-networking/client/pkg/connector"
 	"github.com/franela/goblin"
 )
 
@@ -19,6 +20,15 @@ func TestConnect(t *testing.T){
 			})
 			conn.InitTimeouts()
 			conn.InitWorkers(4)
+
+			conn.WorkerManager().Write(request.NewRequest(
+				"ping", nil,
+			))
+			
+			// m, err := conn.WorkerManager().Read()
+			g.Assert(err).IsNil(err)
+
+			
 
 			defer conn.Close()
 			g.Assert(err).IsNil(err)

@@ -3,9 +3,8 @@ package connector
 import (
 	"net"
 
-	"github.com/YarikRevich/game-networking/client/internal/establisher"
-	"github.com/YarikRevich/game-networking/client/internal/timeout"
-	"github.com/YarikRevich/game-networking/client/pkg/config"
+	"github.com/YarikRevich/game-networking/server/internal/establisher"
+	"github.com/YarikRevich/game-networking/server/pkg/config"
 	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
@@ -20,6 +19,5 @@ func Connect(conf config.Config) (*establisher.Establisher, error){
 		return nil, err
 	}
 
-	return establisher.New(
-		addr, timeout.NewTimeout(conf.PingerAddr)), nil
+	return establisher.New(addr.String()), nil
 }

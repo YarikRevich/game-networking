@@ -1,4 +1,4 @@
-package tools
+package creators
 
 import (
 	"strings"
@@ -14,7 +14,7 @@ func CreateAddr(ip string, port string) (string, error) {
 	}
 	addr.WriteString(":")
 	for i := 0; i < len(port); i++ {
-		if err := addr.WriteByte(ip[i]); err != nil {
+		if err := addr.WriteByte(port[i]); err != nil {
 			return "", err
 		}
 	}

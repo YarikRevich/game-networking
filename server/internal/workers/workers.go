@@ -3,7 +3,9 @@ package workers
 import (
 	"net"
 
+	"github.com/YarikRevich/game-networking/protocol/pkg/id"
 	"github.com/YarikRevich/game-networking/protocol/pkg/models"
+	"github.com/YarikRevich/game-networking/server/internal/handlers"
 	"github.com/YarikRevich/game-networking/server/internal/table"
 	"github.com/YarikRevich/game-networking/server/tools/buffer"
 )
@@ -13,8 +15,10 @@ type WorkerManager struct {
 
 	tab *table.Table
 
+	lri  *id.LocalRequestID
+
 	buff *buffer.Buffer
-	conn *net.UDPConn
+	conn net.PacketConn
 
 	err chan error
 }
@@ -27,7 +31,7 @@ func (wm *WorkerManager) Run() {
 
 func (wm *WorkerManager) worker() {
 	for {
-		buff, ok := wm.buff.Get().([]byte)
+		buff, ok := wm.buff.GetFromBuffer().([]byte)
 		if !ok {
 			continue
 		}
@@ -41,7 +45,23 @@ func (wm *WorkerManager) worker() {
 			wm.tab.Add(addr.String(), buff)
 		}
 
-		wm.buff.Put(buff[:0])
+		msg, err := models.UnmarshalProtocol(buff)
+		if err != nil {
+			continue
+		}
+
+		res := handlers.CallHandler(msg.Procedure)
+		if res != nil{
+			continue
+		}
+
+		if _, err := wm.conn.WriteTo(res, addr); err != nil{
+			continue
+		}
+
+		if cap(buff) < 1<<20 {
+			wm.buff.PutToBuffer(buff[:0])
+		}
 	}
 }
 
@@ -49,9 +69,11 @@ func (wm *WorkerManager) Error() error {
 	return <-wm.err
 }
 
-func New(count int) *WorkerManager {
+func New(count int, conn net.PacketConn) *WorkerManager {
 	return &WorkerManager{
 		count: count,
+		conn:  conn,
+		lri: id.New(),
 		tab:   table.New(),
 		buff:  buffer.New(),
 		err:   make(chan error, count),

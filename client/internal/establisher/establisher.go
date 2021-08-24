@@ -6,57 +6,63 @@ import (
 
 	"github.com/YarikRevich/game-networking/client/internal/timeout"
 	"github.com/YarikRevich/game-networking/client/internal/workers"
+	// "github.com/YarikRevich/game-networking/protocol/pkg/models"
 )
 
-type Connector struct {
-	addr *net.UDPAddr
-	conn *net.UDPConn
-	timeout *timeout.Timeout
+type Establisher struct {
+	addr     *net.UDPAddr
+	conn     *net.UDPConn
+	timeout  *timeout.Timeout
 	wmanager *workers.WorkerManager
 }
 
-func (c *Connector) EstablishConnection() error {
-	conn, err := net.DialUDP("udp", nil, c.addr)
+func (e *Establisher) EstablishConnection() error {
+	conn, err := net.DialUDP("udp", nil, e.addr)
 	if err != nil {
 		return err
 	}
-	c.conn = conn
+	e.conn = conn
 	return nil
 }
 
-func (c *Connector) InitTimeouts() error{
-	return c.timeout.EstimateProperTimout()
-} 
-
-func (c *Connector) InitWorkers(count int){
-	c.wmanager = workers.New(count, c.GetConn())
+func (e *Establisher) InitTimeouts() error {
+	return e.timeout.EstimateProperTimout()
 }
 
-func (c *Connector) SetReadDeadLine(){
-	rt := c.timeout.GetReadTimeout()
-	c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
+func (e *Establisher) InitWorkers(count int) {
+	e.wmanager = workers.New(count, e.GetConn())
 }
 
-func (c *Connector) SetWriteDeadLine(){
-	wt := c.timeout.GetWriteTimeout()
-	c.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
+func (e *Establisher) SetReadDeadLine() {
+	rt := e.timeout.GetReadTimeout()
+	e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
 }
 
-func (c *Connector) Close()error{
-	return c.conn.Close()
+func (e *Establisher) SetWriteDeadLine() {
+	wt := e.timeout.GetWriteTimeout()
+	e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
 }
 
-func (c *Connector) GetConn() *net.UDPConn{
-	return c.conn
+func (e *Establisher) WorkerManager() *workers.WorkerManager {
+	return e.wmanager
 }
 
-func (c *Connector) Ping() error{
-	return c.wmanager.Ping()
+func (e *Establisher) Close() error {
+	return e.conn.Close()
 }
 
-func NewConnector(addr *net.UDPAddr, timeout *timeout.Timeout) *Connector {
-	return &Connector{
-		addr: addr,
+func (e *Establisher) GetConn() *net.UDPConn {
+	return e.conn
+}
+
+func (e *Establisher) Ping() error {
+	// return e.wmanager.Ping()
+	return nil
+}
+
+func New(addr *net.UDPAddr, timeout *timeout.Timeout) *Establisher {
+	return &Establisher{
+		addr:    addr,
 		timeout: timeout,
 	}
 }
