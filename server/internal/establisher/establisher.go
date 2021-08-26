@@ -25,6 +25,7 @@ func (e *Establisher) EstablishListening() error {
 
 func (e *Establisher) InitWorkers(count int) {
 	e.wmanager = workers.New(count, e.GetConn())
+	e.wmanager.Run()
 }
 
 func (e *Establisher) GetConn() net.PacketConn {

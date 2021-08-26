@@ -1,7 +1,10 @@
 package examples_test
 
 import (
+	"fmt"
 	"log"
+	"syscall"
+	"time"
 
 	"github.com/YarikRevich/game-networking/server/internal/handlers"
 	"github.com/YarikRevich/game-networking/server/pkg/config"
@@ -11,10 +14,8 @@ import (
 func ExampleConnect() {
 	conn, _ := connector.Connect(config.Config{
 		IP:   "127.0.0.1",
-		Port: "9999",
+		Port: "9090",
 	})
-
-	
 
 	if err := conn.EstablishListening(); err != nil{
 		log.Fatalln(err)
@@ -26,7 +27,13 @@ func ExampleConnect() {
 		return []byte("ping")
 	})
 
+	go func(){
+		time.Sleep(3 * time.Second)
+		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	}()
+
 	conn.WaitForInterrupt()
 
-	//Output: Workable connector
+	fmt.Println("It works")
+	//Output: It works
 }

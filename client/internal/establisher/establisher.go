@@ -31,6 +31,7 @@ func (e *Establisher) InitTimeouts() error {
 
 func (e *Establisher) InitWorkers(count int) {
 	e.wmanager = workers.New(count, e.GetConn())
+	e.wmanager.Run()
 }
 
 func (e *Establisher) SetReadDeadLine() {

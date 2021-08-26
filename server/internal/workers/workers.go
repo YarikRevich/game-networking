@@ -5,7 +5,7 @@ import (
 
 	"github.com/YarikRevich/game-networking/protocol/pkg/id"
 	"github.com/YarikRevich/game-networking/protocol/pkg/models"
-	"github.com/YarikRevich/game-networking/server/internal/handlers"
+	"github.com/YarikRevich/game-networking/server/pkg/handlers"
 	"github.com/YarikRevich/game-networking/server/internal/table"
 	"github.com/YarikRevich/game-networking/server/tools/buffer"
 )
@@ -24,13 +24,17 @@ type WorkerManager struct {
 }
 
 func (wm *WorkerManager) Run() {
-	for i := 0; i < wm.count; i++ {
-		go wm.worker()
-	}
+	// for i := 0; i < wm.count; i++ {
+	// 	go wm.worker()
+	// }
+
+	go wm.worker()
 }
 
 func (wm *WorkerManager) worker() {
 	for {
+
+
 		buff, ok := wm.buff.GetFromBuffer().([]byte)
 		if !ok {
 			continue
@@ -40,6 +44,7 @@ func (wm *WorkerManager) worker() {
 		if err != nil {
 			wm.err <- err
 		}
+	
 
 		if models.IsProtocolMsg(buff) {
 			wm.tab.Add(addr.String(), buff)

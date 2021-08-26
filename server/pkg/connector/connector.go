@@ -8,7 +8,7 @@ import (
 	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
-func Connect(conf config.Config) (*establisher.Establisher, error){
+func Listen(conf config.Config) (*establisher.Establisher, error){
 	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
 	if err != nil{
 		return nil, err

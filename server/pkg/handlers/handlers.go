@@ -1,7 +1,7 @@
 package handlers
 
 var (
-	handlers map[string]func() []byte
+	handlers = map[string]func() []byte{}
 )
 
 func AddHandler(name string, callback func() []byte) {
