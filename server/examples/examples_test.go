@@ -6,13 +6,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/YarikRevich/game-networking/server/internal/handlers"
+	"github.com/YarikRevich/game-networking/server/pkg/handlers"
 	"github.com/YarikRevich/game-networking/server/pkg/config"
 	"github.com/YarikRevich/game-networking/server/pkg/connector"
 )
 
 func ExampleConnect() {
-	conn, _ := connector.Connect(config.Config{
+	conn, _ := connector.Listen(config.Config{
 		IP:   "127.0.0.1",
 		Port: "9090",
 	})
