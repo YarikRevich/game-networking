@@ -17,7 +17,7 @@ import (
 type WorkerManager struct {
 	state *states.State
 
-	count int // Count of workers
+	count uint32 // Count of workers
 
 	conn *net.UDPConn
 
@@ -34,7 +34,7 @@ type WorkerManager struct {
 func (wm *WorkerManager) Run() {
 	signal.Notify(wm.exit, os.Interrupt)
 
-	for i := 0; i <= wm.count; i++ {
+	for i := 0; i <= int(wm.count); i++ {
 		go wm.worker()
 	}
 	// go wm.pingWorker()
@@ -102,7 +102,7 @@ func (wm *WorkerManager) Ping() error {
 	return nil
 }
 
-func New(count int, conn *net.UDPConn) *WorkerManager {
+func New(count uint32, conn *net.UDPConn) *WorkerManager {
 	return &WorkerManager{
 		state:   states.New(),
 		count:   count,

@@ -9,4 +9,6 @@ type Config struct {
 	//Addr which will be used for pinger
 	//to count the timeout
 	PingerAddr string
+
+	Workers uint32
 }

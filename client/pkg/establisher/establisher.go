@@ -29,7 +29,7 @@ func (e *Establisher) InitTimeouts() error {
 	return e.timeout.EstimateProperTimout()
 }
 
-func (e *Establisher) InitWorkers(count int) {
+func (e *Establisher) InitWorkers(count uint32) {
 	e.wmanager = workers.New(count, e.GetConn())
 	e.wmanager.Run()
 }
