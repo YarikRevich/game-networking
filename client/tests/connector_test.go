@@ -55,6 +55,7 @@ func TestInits(t *testing.T) {
 				Port:       "8080",
 				PingerAddr: "https://www.google.com/",
 			})
+			g.Assert(err).IsNil()
 
 			err = conn.EstablishConnection()
 			g.Assert(err).IsNil()

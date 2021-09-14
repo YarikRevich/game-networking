@@ -18,7 +18,7 @@ var (
 type Msg struct {
 	ID        int      `json:"id"`
 	Procedure string      `json:"procedure"`
-	Data      interface{} `json:"data"`
+	Data      interface{} `json:"data,omitempty"`
 }
 
 func IsProtocolMsg(msg []byte) bool {
