@@ -34,14 +34,14 @@ func (e *Establisher) InitWorkers(count uint32) {
 	e.wmanager.Run()
 }
 
-func (e *Establisher) SetReadDeadLine() {
+func (e *Establisher) SetReadDeadLine() error {
 	rt := e.timeout.GetReadTimeout()
-	e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
+	return e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
 }
 
-func (e *Establisher) SetWriteDeadLine() {
+func (e *Establisher) SetWriteDeadLine() error {
 	wt := e.timeout.GetWriteTimeout()
-	e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
+	return e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
 }
 
 func (e *Establisher) WorkerManager() *workers.WorkerManager {

@@ -23,7 +23,7 @@ func ExampleConnect() {
 
 	conn.InitWorkers(4)
 
-	handlers.AddHandler("ping", func() []byte {
+	handlers.AddHandler("ping", func(data interface{}) []byte{
 		return []byte("ping")
 	})
 

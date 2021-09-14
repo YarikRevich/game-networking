@@ -55,7 +55,9 @@ loop:
 				}
 				wm.receive <- buffer.Bytes()
 			case states.SEND:
-				wm.conn.Write(<-wm.send)
+				if _, err := wm.conn.Write(<-wm.send); err != nil{
+					wm.err <- err
+				}
 			}
 		}
 	}

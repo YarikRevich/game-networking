@@ -55,7 +55,7 @@ func (wm *WorkerManager) worker() {
 			continue
 		}
 
-		res := handlers.CallHandler(msg.Procedure)
+		res := handlers.CallHandler(msg.Procedure, msg.Data)
 		if res != nil{
 			continue
 		}
