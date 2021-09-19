@@ -1,4 +1,4 @@
-package connector
+package listener
 
 import (
 	"net"
@@ -8,7 +8,7 @@ import (
 	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
-func Listen(conf config.Config) (*establisher.Establisher, error){
+func Listen(conf config.Config) (establisher.EstablishAwaiter, error){
 	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
 	if err != nil{
 		return nil, err
@@ -19,5 +19,13 @@ func Listen(conf config.Config) (*establisher.Establisher, error){
 		return nil, err
 	}
 
-	return establisher.New(addr.String()), nil
+	e := establisher.New(addr.String())
+
+	if err := e.EstablishListening(); err != nil{
+		return nil, err
+	}
+
+	e.InitWorkers(conf.WorkersNum)
+
+	return e, nil
 }

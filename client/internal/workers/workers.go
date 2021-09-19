@@ -2,39 +2,34 @@ package workers
 
 import (
 	"bytes"
-	"encoding/json"
+	// "encoding/json"
 	"io"
 	"net"
 	"os"
 	"os/signal"
 
-	"github.com/YarikRevich/game-networking/client/internal/request"
 	"github.com/YarikRevich/game-networking/client/internal/states"
-	"github.com/YarikRevich/game-networking/protocol/pkg/id"
-	"github.com/YarikRevich/game-networking/protocol/pkg/models"
+	// "github.com/YarikRevich/game-networking/protocol/internal/id"
+	// "github.com/YarikRevich/game-networking/protocol/pkg/models"
 )
 
 type WorkerManager struct {
+	conn  *net.UDPConn
 	state *states.State
 
-	count uint32 // Count of workers
-
-	conn *net.UDPConn
-
-	lri *id.LocalRequestID
+	workersNum uint32
 
 	send    chan []byte
 	receive chan []byte
 	ping    chan []byte
-
-	exit chan os.Signal
-	err  chan error
+	exit    chan os.Signal
+	err     chan error
 }
 
 func (wm *WorkerManager) Run() {
 	signal.Notify(wm.exit, os.Interrupt)
 
-	for i := 0; i <= int(wm.count); i++ {
+	for i := 0; i <= int(wm.workersNum); i++ {
 		go wm.worker()
 	}
 	// go wm.pingWorker()
@@ -55,7 +50,7 @@ loop:
 				}
 				wm.receive <- buffer.Bytes()
 			case states.SEND:
-				if _, err := wm.conn.Write(<-wm.send); err != nil{
+				if _, err := wm.conn.Write(<-wm.send); err != nil {
 					wm.err <- err
 				}
 			}
@@ -82,21 +77,22 @@ func (wm *WorkerManager) Error() error {
 	return <-wm.err
 }
 
-func (wm *WorkerManager) Read() (models.Msg, error) {
+func (wm *WorkerManager) Read() ([]byte, error) {
 	wm.state.SetCurrState(states.RECEIVE)
 
-	var m models.Msg
-	if err := json.Unmarshal(<-wm.receive, &m); err != nil {
-		return models.Msg{}, err
-	}
-	return m, nil
+	// var m models.Msg
+	// if err := json.Unmarshal(<-wm.receive, &m); err != nil {
+	// return models.Msg{}, err
+	// }
+	return nil, nil
 }
 
-func (wm *WorkerManager) Write(src models.Msg) {
-	request.CompleteRequestWithID(wm.lri.GetID(), &src)
+func (wm *WorkerManager) Write([]byte) {
+	// request.CompleteRequestWithID(wm.lri.GetID(), &src)
 
+	
 	wm.state.SetCurrState(states.SEND)
-	wm.send <- request.FormatRequestToJSON(src)
+	// wm.send <- request.FormatRequestToJSON(src)
 }
 
 func (wm *WorkerManager) Ping() error {
@@ -104,16 +100,16 @@ func (wm *WorkerManager) Ping() error {
 	return nil
 }
 
-func New(count uint32, conn *net.UDPConn) *WorkerManager {
+func New(workersNum uint32, conn *net.UDPConn) *WorkerManager {
 	return &WorkerManager{
-		state:   states.New(),
-		count:   count,
-		conn:    conn,
-		lri:     id.New(),
-		send:    make(chan []byte, count),
-		receive: make(chan []byte, count),
-		ping:    make(chan []byte, count),
+		state:      states.New(),
+		workersNum: workersNum,
+		conn:       conn,
+		// lri:     id.New(),
+		send:    make(chan []byte, workersNum),
+		receive: make(chan []byte, workersNum),
+		ping:    make(chan []byte, workersNum),
 		exit:    make(chan os.Signal),
-		err:     make(chan error, count),
+		err:     make(chan error, workersNum),
 	}
 }

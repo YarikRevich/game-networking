@@ -10,5 +10,5 @@ type Config struct {
 	//to count the timeout
 	PingerAddr string
 
-	Workers uint32
+	WorkersNum uint32
 }

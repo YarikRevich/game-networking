@@ -3,21 +3,21 @@ package workers
 import (
 	"net"
 
-	"github.com/YarikRevich/game-networking/protocol/pkg/id"
-	"github.com/YarikRevich/game-networking/protocol/pkg/models"
-	"github.com/YarikRevich/game-networking/server/pkg/handlers"
+	// "github.com/YarikRevich/game-networking/protocol/pkg/id"
+	// "github.com/YarikRevich/game-networking/protocol/pkg/models"
+	// "github.com/YarikRevich/game-networking/server/pkg/handlers"
 	"github.com/YarikRevich/game-networking/server/internal/table"
-	"github.com/YarikRevich/game-networking/server/tools/buffer"
+	// "github.com/YarikRevich/game-networking/server/tools/buffer"
 )
 
 type WorkerManager struct {
-	count int //Count of workers
+	workersNum uint32
 
 	tab *table.Table
 
-	lri  *id.LocalRequestID
+	// lri  *id.LocalRequestID
 
-	buff *buffer.Buffer
+	// buff *buffer.Buffer
 	conn net.PacketConn
 
 	err chan error
@@ -35,38 +35,38 @@ func (wm *WorkerManager) worker() {
 	for {
 
 
-		buff, ok := wm.buff.GetFromBuffer().([]byte)
-		if !ok {
-			continue
-		}
+		// buff, ok := wm.buff.GetFromBuffer().([]byte)
+		// if !ok {
+		// 	continue
+		// }
 
-		_, addr, err := wm.conn.ReadFrom(buff)
-		if err != nil {
-			wm.err <- err
-		}
+		// _, addr, err := wm.conn.ReadFrom(buff)
+		// if err != nil {
+		// 	wm.err <- err
+		// }
 	
 
-		if models.IsProtocolMsg(buff) {
-			wm.tab.Add(addr.String(), buff)
-		}
+		// if models.IsProtocolMsg(buff) {
+		// 	wm.tab.Add(addr.String(), buff)
+		// }
 
-		msg, err := models.UnmarshalProtocol(buff)
-		if err != nil {
-			continue
-		}
+		// msg, err := models.UnmarshalProtocol(buff)
+		// if err != nil {
+		// 	continue
+		// }
 
-		res := handlers.CallHandler(msg.Procedure, msg.Data)
-		if res != nil{
-			continue
-		}
+		// res := handlers.CallHandler(msg.Procedure, msg.Data)
+		// if res != nil{
+		// 	continue
+		// }
 
-		if _, err := wm.conn.WriteTo(res, addr); err != nil{
-			continue
-		}
+		// if _, err := wm.conn.WriteTo(res, addr); err != nil{
+		// 	continue
+		// }
 
-		if cap(buff) < 1<<20 {
-			wm.buff.PutToBuffer(buff[:0])
-		}
+		// if cap(buff) < 1<<20 {
+		// 	wm.buff.PutToBuffer(buff[:0])
+		// }
 	}
 }
 
@@ -74,13 +74,13 @@ func (wm *WorkerManager) Error() error {
 	return <-wm.err
 }
 
-func New(count int, conn net.PacketConn) *WorkerManager {
+func New(workersNum uint32, conn net.PacketConn) *WorkerManager {
 	return &WorkerManager{
-		count: count,
+		workersNum: workersNum,
 		conn:  conn,
-		lri: id.New(),
+		// lri: id.New(),
 		tab:   table.New(),
-		buff:  buffer.New(),
-		err:   make(chan error, count),
+		// buff:  buffer.New(),
+		err:   make(chan error, workersNum),
 	}
 }
