@@ -2,6 +2,7 @@ package workers
 
 import (
 	"net"
+	"runtime"
 
 	// "github.com/YarikRevich/game-networking/protocol/pkg/id"
 	// "github.com/YarikRevich/game-networking/protocol/pkg/models"
@@ -11,7 +12,6 @@ import (
 )
 
 type WorkerManager struct {
-	workersNum uint32
 
 	tab *table.Table
 
@@ -74,13 +74,12 @@ func (wm *WorkerManager) Error() error {
 	return <-wm.err
 }
 
-func New(workersNum uint32, conn net.PacketConn) *WorkerManager {
+func New(conn net.PacketConn) *WorkerManager {
 	return &WorkerManager{
-		workersNum: workersNum,
 		conn:  conn,
 		// lri: id.New(),
 		tab:   table.New(),
 		// buff:  buffer.New(),
-		err:   make(chan error, workersNum),
+		err:   make(chan error, runtime.NumCPU()),
 	}
 }

@@ -30,8 +30,8 @@ func (e *Establisher) EstablishListening() error {
 	return nil
 }
 
-func (e *Establisher) InitWorkers(workersNum uint32) {
-	e.wmanager = workers.New(workersNum, e.GetConn())
+func (e *Establisher) InitWorkers() {
+	e.wmanager = workers.New(e.GetConn())
 	e.wmanager.Run()
 }
 

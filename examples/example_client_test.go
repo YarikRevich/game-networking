@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/YarikRevich/game-networking/server/pkg/handlers"
-	"github.com/YarikRevich/game-networking/server/pkg/config"
+	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/server/pkg/listener"
 )
 

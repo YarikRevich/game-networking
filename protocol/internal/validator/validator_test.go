@@ -16,14 +16,14 @@ func TestValidator(t *testing.T){
 
 		g.It("TestValidatorSet", func(){
 			val := UseValidator()
-			val.SetProtocol(new(Stub))
+			// val.SetProtocol(new(Stub))
 
 			g.Assert(val.IsProtocolSet()).IsTrue()
 		})
 
 		g.It("TestValidatorChecker(Success)", func(){
 			val := UseValidator()
-			val.SetProtocol(new(Stub))
+			// val.SetProtocol(new(Stub))
 
 			g.Assert(val.IsProtocolMsg(Stub{Name: "yarik", Surname: "Svit"})).IsTrue()
 		})
@@ -31,7 +31,7 @@ func TestValidator(t *testing.T){
 
 		g.It("TestValidatorChecker(False)", func(){
 			val := UseValidator()
-			val.SetProtocol(new(Stub))
+			// val.SetProtocol(new(Stub))
 
 			g.Assert(val.IsProtocolMsg(struct{Name string; Surname string; Age int}{Name: "yarik", Surname: "Svit", Age: 10})).IsFalse()
 		})

@@ -4,7 +4,7 @@ import (
 	"net"
 
 	"github.com/YarikRevich/game-networking/server/internal/establisher"
-	"github.com/YarikRevich/game-networking/server/pkg/config"
+	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
@@ -25,7 +25,7 @@ func Listen(conf config.Config) (establisher.EstablishAwaiter, error){
 		return nil, err
 	}
 
-	e.InitWorkers(conf.WorkersNum)
+	e.InitWorkers()
 
 	return e, nil
 }

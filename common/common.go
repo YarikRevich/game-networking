@@ -1,7 +1,12 @@
 package common
 
 type Conn interface{
-	Read() interface{}
-	Write(interface{})
+	Call(string) interface{}
+	Send(string, interface{})
+
+	Error() error
+	
+	// Read() ([]byte, error)
+	// Write(interface{}) error
 	Close() error 
 }

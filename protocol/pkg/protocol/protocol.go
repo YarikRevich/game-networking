@@ -1,45 +1,55 @@
 package protocol
 
-import (
-	"github.com/YarikRevich/game-networking/protocol/internal/fields"
-	"github.com/YarikRevich/game-networking/protocol/internal/validator"
-)
-
-var (
-	p Protocol
-)
-
-type Protocol interface {
-	FieldManager() fields.FieldManager
-	Validator() validator.Validator
-	SetProtocol(interface{})
+type Service struct {
+	HashSum [32]byte `json:"hash_sum"`
 }
 
-type P struct {
-	fieldManager fields.FieldManager
-	val          validator.Validator
+type Protocol struct {
+	Service
+	Procedure string `json:"procedure"`
+	Msg interface{} `json:"msg"`
 }
 
-func (q *P) FieldManager() fields.FieldManager {
-	return q.fieldManager
-}
+// import (
+// 	"github.com/YarikRevich/game-networking/protocol/internal/fields"
+// 	"github.com/YarikRevich/game-networking/protocol/internal/validator"
+// )
 
-func (q *P) Validator() validator.Validator {
-	return q.val
-}
+// var (
+// 	p Protocol
+// )
 
-func (q *P) SetProtocol(t interface{}){
-	q.fieldManager.SetProtocolValues(t)
-	q.val.SetProtocolTypes(t)
-}
+// type Protocol interface {
+// 	FieldManager() fields.FieldManager
+// 	Validator() validator.Validator
+// 	SetProtocol(interface{})
+// }
 
-func UseProtocol(t interface{}) Protocol {
-	if p == nil {
-		p = &P{
-			fieldManager: fields.UseFieldManager(),
-			val: validator.UseValidator(),
-		}
-		p.SetProtocol(t)
-	}
-	return p
-}
+// type P struct {
+// 	fieldManager fields.FieldManager
+// 	val          validator.Validator
+// }
+
+// func (q *P) FieldManager() fields.FieldManager {
+// 	return q.fieldManager
+// }
+
+// func (q *P) Validator() validator.Validator {
+// 	return q.val
+// }
+
+// func (q *P) SetProtocol(t interface{}){
+// 	q.fieldManager.SetProtocolValues(t)
+// 	q.val.SetProtocolTypes(t)
+// }
+
+// func UseProtocol(t interface{}) Protocol {
+// 	if p == nil {
+// 		p = &P{
+// 			fieldManager: fields.UseFieldManager(),
+// 			val: validator.UseValidator(),
+// 		}
+// 		p.SetProtocol(t)
+// 	}
+// 	return p
+// }

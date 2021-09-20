@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/YarikRevich/game-networking/server/pkg/config"
+	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/server/pkg/listener"
 	"github.com/franela/goblin"
 )
