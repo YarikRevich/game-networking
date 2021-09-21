@@ -2,26 +2,19 @@ package examples_test
 
 import (
 	"fmt"
-	"log"
 	"syscall"
 	"time"
 
 	"github.com/YarikRevich/game-networking/server/pkg/handlers"
-	"github.com/YarikRevich/game-networking/server/pkg/config"
-	"github.com/YarikRevich/game-networking/server/pkg/connector"
+	"github.com/YarikRevich/game-networking/config"
+	"github.com/YarikRevich/game-networking/server/pkg/listener"
 )
 
 func ExampleConnect() {
-	conn, _ := connector.Listen(config.Config{
+	conn, _ := listener.Listen(config.Config{
 		IP:   "127.0.0.1",
 		Port: "9090",
 	})
-
-	if err := conn.EstablishListening(); err != nil{
-		log.Fatalln(err)
-	}
-
-	conn.InitWorkers(4)
 
 	handlers.AddHandler("ping", func(data interface{}) []byte{
 		return []byte("ping")
