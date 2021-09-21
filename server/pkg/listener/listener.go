@@ -19,7 +19,7 @@ func Listen(conf config.Config) (establisher.EstablishAwaiter, error){
 		return nil, err
 	}
 
-	e := establisher.New(addr.String())
+	e := establisher.New(addr)
 
 	if err := e.EstablishListening(); err != nil{
 		return nil, err

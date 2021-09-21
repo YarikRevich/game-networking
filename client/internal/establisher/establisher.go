@@ -3,6 +3,10 @@ package establisher
 import (
 	"bytes"
 	"context"
+	"fmt"
+
+	// "fmt"
+
 	// "crypto/sha256"
 	"encoding/json"
 	// "fmt"
@@ -12,7 +16,6 @@ import (
 	"os/signal"
 	"runtime"
 	"sync"
-	"time"
 
 	// "time"
 
@@ -38,7 +41,8 @@ type workerManager struct {
 }
 
 type establisher struct {
-	*sync.Mutex
+	errorMutex *sync.Mutex
+	msgMutex *sync.Mutex
 
 	// workerManager
 
@@ -65,7 +69,7 @@ func (e *establisher) establishConnection() error {
 	}
 	e.conn = conn
 
-	e.runWorkers()
+	// e.runWorkers()
 	return nil
 }
 
@@ -101,43 +105,70 @@ func (e *establisher) runWorkers() {
 		go func(ctx context.Context) {
 			var buffer bytes.Buffer
 			if _, err := io.Copy(&buffer, e.conn); err != nil {
-				e.Lock()
+				e.errorMutex.Lock()
 				e.internalError = err
-				e.Unlock()
+				e.errorMutex.Unlock()
 			}
 			var msg protocol.Protocol
 			if err := json.Unmarshal(buffer.Bytes(), &msg); err != nil {
-				e.Lock()
+				e.errorMutex.Lock()
 				e.internalError = err
-				e.Unlock()
+				e.errorMutex.Unlock()
 			}
 
+			e.msgMutex.Lock()
 			e.table[msg.Procedure] = msg
+			e.msgMutex.Unlock()
 		}(ctx)
 		go func(ctx context.Context) {
 			if _, err := e.conn.Write(e.send); err != nil {
-				e.Lock()
+				e.errorMutex.Lock()
 				e.internalError = err
-				e.Unlock()
+				e.errorMutex.Unlock()
 			}
 		}(ctx)
 	}
 }
 
-func (e *establisher) Call(procName string) interface{} {
-	after := time.After(1 * time.Second)
-	for {
-		select {
-		case <-after:
-			return nil
-		default:
-			k, ok := e.table[procName]
-			if ok {
-				return k.Msg
-			}
-		}
+func (e *establisher) Call(procName string, msg interface{}) interface{} {
+	// after := time.After(1 * time.Second)
+	// for {
+	// 	select {
+	// 	case <-after:
+	// 		return nil
+	// 	default:
+	// 		k, ok := e.table[procName]
+	// 		if ok {
+	// 			return k.Msg
+	// 		}
+	// 	}
+	m := protocol.Protocol{Procedure: procName, Msg: msg}
+	b, _ :=	json.Marshal(m)
 
-	}
+	// }
+	// buff := make([]byte, 32)
+
+	n, err := e.conn.Write(b)
+
+	fmt.Fprintln(os.Stderr, n, err)
+
+
+	// if n, err := e.conn.Read(buff); n == 0 || err != nil{
+	// 	fmt.Fprintln(os.Stderr, "ERROR")
+	// 	return nil
+	// }
+
+
+
+
+	// fmt.Fprintln(os.Stderr, buff)
+
+	var r protocol.Protocol
+
+	// json.Unmarshal(buff, &r)
+
+	return r.Msg
+
 	// if err := e.wrapper.Unmarshal(<-e.read); err != nil {
 	// 	return nil, err
 	// }
@@ -154,22 +185,24 @@ func (e *establisher) Send(procName string, msg interface{}) {
 	// e.wrapper.SetBase(m)
 	// e.wrapper.SetField("hash_sum", sha256.Sum256([]byte(fmt.Sprintf("%v", m))))
 
-	b, err := json.Marshal(protocol.Protocol{Procedure: procName, Msg: msg})
-	if err != nil {
-		e.Lock()
-		e.internalError = err
-		e.Unlock()
-	}
-	// b, err := e.wrapper.Marshal()
+	// b, err := json.Marshal(protocol.Protocol{Procedure: procName, Msg: msg})
 	// if err != nil {
-	// 	return err
+	// 	e.errorMutex.Lock()
+	// 	e.internalError = err
+	// 	e.errorMutex.Unlock()
 	// }
-	e.Lock()
-	e.send = b
-	e.Unlock()
+	// // b, err := e.wrapper.Marshal()
+	// // if err != nil {
+	// // 	return err
+	// // }
+	// e.errorMutex.Lock()
+	// e.send = b
+	// e.errorMutex.Unlock()
 }
 
 func (e *establisher) Error() error {
+	e.errorMutex.Lock()
+	defer e.errorMutex.Unlock()
 	return e.internalError
 }
 
@@ -195,7 +228,8 @@ func (e *establisher) Close() error {
 
 func New(conf config.Config) (common.Conn, error) {
 	e := &establisher{
-		Mutex: new(sync.Mutex),
+		errorMutex: new(sync.Mutex),
+		msgMutex: new(sync.Mutex),
 		// workerManager: workerManager{
 		// 	write: make(chan []byte),
 		// 	read:  make(chan []byte, runtime.NumCPU()),

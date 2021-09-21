@@ -14,7 +14,7 @@ func TestServer(t *testing.T){
 
 	g.Describe("TestServer", func() {
 		g.It("TestListener", func(){
-			c, err := listener.Listen(config.Config{IP: "127.0.0.1", Port: "8090", WorkersNum: 4})
+			c, err := listener.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
 			g.Assert(err).IsNil()
 
 			go func(){

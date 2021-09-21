@@ -1,8 +1,8 @@
 package common
 
 type Conn interface{
-	Call(string) interface{}
-	Send(string, interface{})
+	Call(string, interface{}) interface{}
+	// Send(string, interface{})
 
 	Error() error
 	
