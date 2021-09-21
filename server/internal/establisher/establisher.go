@@ -1,11 +1,14 @@
 package establisher
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
 
-	"github.com/YarikRevich/game-networking/server/internal/workers"
+	"github.com/YarikRevich/game-networking/config"
+	// "github.com/YarikRevich/game-networking/server/internal/workers"
+	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
 type EstablishAwaiter interface {
@@ -13,15 +16,14 @@ type EstablishAwaiter interface {
 	Close() error
 }
 
-type Establisher struct {
+type establisher struct {
 	addr     *net.UDPAddr
 	conn     *net.UDPConn
-	wmanager *workers.WorkerManager
 
 	close chan int
 }
 
-func (e *Establisher) EstablishListening() error {
+func (e *establisher) establishListening() error {
 	conn, err := net.ListenUDP("udp", e.addr)
 	if err != nil {
 		return err
@@ -30,16 +32,49 @@ func (e *Establisher) EstablishListening() error {
 	return nil
 }
 
-func (e *Establisher) InitWorkers() {
-	e.wmanager = workers.New(e.GetConn())
-	e.wmanager.Run()
+func (e *establisher) setConfig(conf config.Config)error{
+	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
+	if err != nil{
+		return err
+	}
+
+	addr, err := net.ResolveUDPAddr("udp", createdAddr)
+	if err != nil{
+		return err
+	}
+	e.addr = addr
+	return nil
 }
 
-func (e *Establisher) GetConn() *net.UDPConn {
-	return e.conn
+// func (e *Establisher) InitWorkers() {
+// 	e.wmanager = workers.New(e.GetConn())
+// 	e.wmanager.Run()
+// }
+
+// func (e *Establisher) GetConn() *net.UDPConn {
+// 	return e.conn
+// }
+func (e *establisher) run(){
+	for {
+		select {
+		case <- e.close:
+			return
+		default:
+			buff := make([]byte, 32)
+
+			_, addr, err := e.conn.ReadFromUDP(buff)
+			if err != nil{
+				continue
+			}
+			if addr != nil{
+				fmt.Println(addr.String())
+			}
+		}
+	}
 }
 
-func (e *Establisher) WaitForInterrupt() error {
+
+func (e *establisher) WaitForInterrupt() error {
 	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt)
 	for {
@@ -52,14 +87,19 @@ func (e *Establisher) WaitForInterrupt() error {
 	}
 }
 
-func (e *Establisher) Close() error {
+func (e *establisher) Close() error {
 	e.close <- 1
 	return e.conn.Close()
 }
 
-func New(addr *net.UDPAddr) *Establisher {
-	return &Establisher{
-		addr: addr,
-		close: make(chan int, 1),
+func New(conf config.Config) (EstablishAwaiter, error) {
+	e := &establisher{close: make(chan int, 1)}
+	if err := e.setConfig(conf); err != nil {
+		return nil, err
 	}
+	if err := e.establishListening(); err != nil {
+		return nil, err
+	}
+	e.run()
+	return e, nil
 }
