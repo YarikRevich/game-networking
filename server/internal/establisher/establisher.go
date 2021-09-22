@@ -1,24 +1,28 @@
 package establisher
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"net"
 	"os"
 	"os/signal"
 
+	"github.com/YarikRevich/game-networking/common"
 	"github.com/YarikRevich/game-networking/config"
-	// "github.com/YarikRevich/game-networking/server/internal/workers"
+	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
+
+	// "github.com/YarikRevich/game-networking/server/pkg/handlers"
+	"github.com/YarikRevich/game-networking/tools/pkg/buffer"
 	"github.com/YarikRevich/game-networking/tools/pkg/creators"
 )
 
-type EstablishAwaiter interface {
-	WaitForInterrupt() error
-	Close() error
-}
-
 type establisher struct {
-	addr     *net.UDPAddr
-	conn     *net.UDPConn
+	buffer *buffer.Buffer
+
+	addr *net.UDPAddr
+	conn *net.UDPConn
+
+	handlers map[string]func(data interface{}) ([]byte, error)
 
 	close chan int
 }
@@ -32,59 +36,86 @@ func (e *establisher) establishListening() error {
 	return nil
 }
 
-func (e *establisher) setConfig(conf config.Config)error{
+func (e *establisher) setConfig(conf config.Config) error {
 	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	addr, err := net.ResolveUDPAddr("udp", createdAddr)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	e.addr = addr
 	return nil
 }
 
-// func (e *Establisher) InitWorkers() {
-// 	e.wmanager = workers.New(e.GetConn())
-// 	e.wmanager.Run()
-// }
-
-// func (e *Establisher) GetConn() *net.UDPConn {
-// 	return e.conn
-// }
-func (e *establisher) run(){
+func (e *establisher) run() {
 	for {
 		select {
-		case <- e.close:
+		case <-e.close:
 			return
 		default:
-			buff := make([]byte, 32)
+			buff := e.buffer.GetFromBuffer().([]byte)
 
 			_, addr, err := e.conn.ReadFromUDP(buff)
-			if err != nil{
+			if err != nil {
 				continue
 			}
-			if addr != nil{
-				fmt.Println(addr.String())
+
+			if addr != nil {
+				buff = bytes.Trim(buff, "\x00")
+
+				var p protocol.Protocol
+
+				if err := json.Unmarshal(buff, &p); err != nil {
+					continue
+				}
+
+				r, err := e.CallHandler(p.Procedure, p.Msg)
+				
+				p.Msg = string(r)
+				p.Error = err
+
+				b, err := json.Marshal(p)
+				if err != nil {
+					continue
+				}
+
+				if _, err := e.conn.WriteTo(b, addr); err != nil {
+					continue
+				}
+			}
+
+			if cap(buff) <= 20*1024 {
+				e.buffer.PutToBuffer(buff[:0])
 			}
 		}
 	}
 }
 
-
 func (e *establisher) WaitForInterrupt() error {
-	sig := make(chan os.Signal)
+	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	for {
 		select {
-		case <- e.close:
+		case <-e.close:
 			return nil
-		case <- sig:
+		case <-sig:
 			return e.Close()
 		}
 	}
+}
+
+func (e *establisher) AddHandler(name string, callback func(data interface{}) ([]byte, error)) {
+	e.handlers[name] = callback
+}
+
+func (e *establisher) CallHandler(name string, data interface{}) ([]byte, error) {
+	if v, ok := e.handlers[name]; ok {
+		return v(data)
+	}
+	return nil, nil
 }
 
 func (e *establisher) Close() error {
@@ -92,14 +123,18 @@ func (e *establisher) Close() error {
 	return e.conn.Close()
 }
 
-func New(conf config.Config) (EstablishAwaiter, error) {
-	e := &establisher{close: make(chan int, 1)}
+func New(conf config.Config) (common.Listener, error) {
+	e := &establisher{
+		buffer: buffer.New(),
+		handlers: make(map[string]func(data interface{}) ([]byte, error)),
+		close:  make(chan int, 1),
+	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err
 	}
 	if err := e.establishListening(); err != nil {
 		return nil, err
 	}
-	e.run()
+	go e.run()
 	return e, nil
 }

@@ -6,6 +6,6 @@ import (
 	"github.com/YarikRevich/game-networking/client/internal/establisher"
 )
 
-func Dial(conf config.Config) (common.Conn, error) {
+func Dial(conf config.Config) (common.Dialer, error) {
 	return establisher.New(conf)
 }

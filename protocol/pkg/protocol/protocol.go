@@ -8,7 +8,14 @@ type Protocol struct {
 	Service
 	Procedure string `json:"procedure"`
 	Msg interface{} `json:"msg"`
+	Error error `json:"error"`
 }
+
+// type ProtocolResponse struct {
+// 	Service
+// 	Procedure string `json:"procedure"`
+// 	Msg interface{} `json:"msg"`
+// }
 
 // import (
 // 	"github.com/YarikRevich/game-networking/protocol/internal/fields"

@@ -5,7 +5,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/YarikRevich/game-networking/server/pkg/handlers"
 	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/server/pkg/listener"
 )
@@ -16,8 +15,8 @@ func ExampleConnect() {
 		Port: "9090",
 	})
 
-	handlers.AddHandler("ping", func(data interface{}) []byte{
-		return []byte("ping")
+	conn.AddHandler("ping", func(data interface{}) ([]byte, error){
+		return []byte("ping"), nil
 	})
 
 	go func(){
