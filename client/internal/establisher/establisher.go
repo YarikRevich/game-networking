@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/YarikRevich/game-networking/client/internal/scheduler"
 	"github.com/YarikRevich/game-networking/common"
 	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
@@ -17,16 +18,21 @@ import (
 	"github.com/YarikRevich/wrapper/pkg/wrapper"
 )
 
-var (
-	poolBuff = buffer.New()
-)
+var poolBuff = buffer.New()
+
+// type ankPool struct {
+// 	sync.Mutex
+// 	count int
+// }
 
 type establisher struct {
 	sync.Mutex
+	// ankPool
 
-	addr    *net.UDPAddr
-	conn    *net.UDPConn
-	wrapper wrapper.Wrapper
+	scheduler scheduler.IScheduler
+	addr      *net.UDPAddr
+	conn      *net.UDPConn
+	wrapper   wrapper.Wrapper
 }
 
 func (e *establisher) establishConnection() error {
@@ -39,9 +45,6 @@ func (e *establisher) establishConnection() error {
 }
 
 func (e *establisher) setConfig(conf config.Config) error {
-	e.wrapper.SetDecoder(conf.Decoder)
-	e.wrapper.SetEncoder(conf.Encoder)
-
 	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
 	if err != nil {
 		return err
@@ -55,70 +58,35 @@ func (e *establisher) setConfig(conf config.Config) error {
 	return nil
 }
 
-// func (e *establisher) runWorkers() {
-// 	signal.Notify(e.signalExit, os.Interrupt)
+func (e *establisher) Call(procedure string, src interface{}, dst interface{}, errc func(error), ank bool) error {
+	if errc == nil {
+		return errors.New("error callback mustn't be nil")
+	}
 
-// 	ctx, close := context.WithCancel(context.Background())
-
-// 	go func() {
-// 		for range e.signalExit {
-// 			close()
-// 		}
-// 	}()
-
-// 	for i := 0; i < runtime.NumCPU(); i++ {
-// 		go func(ctx context.Context) {
-// 			var buffer bytes.Buffer
-// 			if _, err := io.Copy(&buffer, e.conn); err != nil {
-// 				e.errorMutex.Lock()
-// 				e.internalError = err
-// 				e.errorMutex.Unlock()
-// 			}
-// 			var msg protocol.Protocol
-// 			if err := json.Unmarshal(buffer.Bytes(), &msg); err != nil {
-// 				e.errorMutex.Lock()
-// 				e.internalError = err
-// 				e.errorMutex.Unlock()
-// 			}
-
-// 			e.msgMutex.Lock()
-// 			e.table[msg.Procedure] = msg
-// 			e.msgMutex.Unlock()
-// 		}(ctx)
-// 		go func(ctx context.Context) {
-// 			if _, err := e.conn.Write(e.send); err != nil {
-// 				e.errorMutex.Lock()
-// 				e.internalError = err
-// 				e.errorMutex.Unlock()
-// 			}
-// 		}(ctx)
-// 	}
-// }
-
-func (e *establisher) Call(procName string, src interface{}, dst interface{}, ec chan error)error {
 	dstVal := reflect.ValueOf(dst)
-	if dstVal.Kind() != reflect.Ptr{
+	if dstVal.Kind() != reflect.Ptr && !dstVal.IsNil() {
 		return errors.New("dst should be a pointer")
 	}
-	go func(){
-		m := protocol.Protocol{Procedure: procName, Msg: src}
+
+	call := func() {
+		m := protocol.Protocol{Procedure: procedure, Msg: src}
 		b, err := json.Marshal(m)
-		if err != nil{
-			ec <- err
+		if err != nil {
+			errc(err)
 			return
 		}
-	
+
 		_, err = e.conn.Write(b)
-		if err != nil{
-			ec <- err
+		if err != nil {
+			errc(err)
 			return
 		}
 
 		buff := poolBuff.GetFromBuffer().([]byte)
-	
+
 		_, err = e.conn.Read(buff)
-		if err != nil{
-			ec <- err
+		if err != nil {
+			errc(err)
 			return
 		}
 
@@ -126,21 +94,39 @@ func (e *establisher) Call(procName string, src interface{}, dst interface{}, ec
 
 		var p protocol.Protocol
 		err = json.Unmarshal(buff, &p)
-		if err != nil{
-			ec <- err
+		if err != nil {
+			errc(err)
 			return
 		}
-		if cap(buff) <= 20 * 1024{
+		if cap(buff) <= 20*1024 {
 			poolBuff.PutToBuffer(buff[:0])
 		}
 
-		if p.Msg == nil{
-			ec <- fmt.Errorf("message is empty: %w", err)
+		if p.Msg == nil {
+			errc(fmt.Errorf("message is empty: %w", err))
 			return
 		}
 
-		dstVal.Elem().Set(reflect.ValueOf(p.Msg))
-	}()
+		if ank {
+			e.scheduler.DecConfirmations()
+		}
+
+		if !dstVal.IsNil() {
+			dstVal.Elem().Set(reflect.ValueOf(p.Msg))
+		}
+	}
+
+	if e.scheduler.CountConfirmations() != 0 {
+		e.scheduler.Schedule(call)
+		return nil
+	}
+
+	if ank {
+		e.scheduler.IncConfirmations()
+	}
+
+	go call()
+
 	return nil
 	// if e.wrapper.GetField("hash_sum").([32]byte) == e.wrapper.GetBase() {
 	// 	//validation by hash_sum
@@ -167,7 +153,8 @@ func (e *establisher) Close() error {
 
 func New(conf config.Config) (common.Dialer, error) {
 	e := &establisher{
-		wrapper: wrapper.UseWrapper(),
+		wrapper:   wrapper.UseWrapper(),
+		scheduler: scheduler.NewScheduler(20),
 	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err

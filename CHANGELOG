@@ -1,0 +1,9 @@
+#CHANGELOG
+
+---
+[v1.1] - 09.10.2021
+Feature:
+	- Added scheduler for calls with ank param	
+Fix:
+	- Removed unimportant components
+---

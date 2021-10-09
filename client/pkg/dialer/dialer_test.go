@@ -1,7 +1,6 @@
 package dialer
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -26,36 +25,45 @@ func TestDialer(t *testing.T) {
 			}()
 			g.Assert(c.WaitForInterrupt()).IsNil()
 		}()
-	
+
+		time.Sleep(2 * time.Second)
+
 		clientConfig := config.Config{
 			IP: "127.0.0.1", 
 			Port: "8090", 
-			Decoder: json.Unmarshal,
-			Encoder: json.Marshal,
 		}
 
-		g.It("dial", func() {
-			d, err := Dial(clientConfig)
-			g.Assert(err).IsNil()
+		d, err := Dial(clientConfig)
+		g.Assert(err).IsNil()
 
-			defer func() {
-				g.Assert(d.Close())
-			}()
+		g.After(func() {
+			g.Assert(d.Close())
 		})
 
 		g.It("dial call", func() {
-			d, err := Dial(clientConfig)
-			g.Assert(err).IsNil()
+	
 
 			var dst string
 			src := "itworks"
-			g.Assert(d.Call("test", src, &dst, make(chan error, 32))).IsNil()
+			g.Assert(d.Call("test", src, &dst, func(e error) { panic(err) }, false)).IsNil()
 			time.Sleep(2 * time.Second)
 			g.Assert(dst).Eql("itworks")
 
-			defer func() {
-				g.Assert(d.Close())
-			}()
+		})
+
+		g.It("dial call, test ank", func() {
+			var dst string
+			src := "itworks"
+			g.Assert(d.Call("test", src, &dst, func(e error) { panic(err) }, true)).IsNil()
+			
+			time.Sleep(2 * time.Second)
+			g.Assert(dst).Eql("itworks")
+
+			g.Assert(d.Call("test", src, &dst, func(e error) { panic(err) }, true)).IsNil()
+			
+			time.Sleep(2 * time.Second)
+			g.Assert(dst).Eql("itworks")
+			
 		})
 	})
 }
