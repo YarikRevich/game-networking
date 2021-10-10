@@ -19,7 +19,7 @@ func (b *Buffer) GetFromBuffer() interface{} {
 func New() *Buffer {
 	return &Buffer{
 		&sync.Pool{
-			New: func() interface{} { return make([]byte, 0, 32 * 1024) },
+			New: func() interface{} { return make([]byte, 32 * 1024) },
 		},
 	}
 }
