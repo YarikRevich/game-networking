@@ -72,12 +72,16 @@ func (e *establisher) run() {
 					continue
 				}
 
-				r, err := e.CallHandler(p.Procedure, buff)
+				b, err := json.Marshal(p.Msg)
+				if err != nil{
+					continue
+				}
+				r, err := e.CallHandler(p.Procedure, b)
 				
 				p.Msg = string(r)
 				p.Error = err
 
-				b, err := json.Marshal(p)
+				b, err = json.Marshal(p)
 				if err != nil {
 					continue
 				}
