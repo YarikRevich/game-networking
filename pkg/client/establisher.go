@@ -13,7 +13,6 @@ import (
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
 	"github.com/YarikRevich/game-networking/tools/buffer"
 	"github.com/YarikRevich/game-networking/tools/creators"
-	"github.com/YarikRevich/wrapper/pkg/wrapper"
 )
 
 var poolBuff = buffer.New()
@@ -24,7 +23,6 @@ type establisher struct {
 	scheduler IScheduler
 	addr      *net.UDPAddr
 	conn      *net.UDPConn
-	wrapper   wrapper.Wrapper
 }
 
 func (e *establisher) establishConnection() error {
@@ -145,7 +143,6 @@ func (e *establisher) Close() error {
 
 func NewEstablisher(conf config.Config) (Dialer, error) {
 	e := &establisher{
-		wrapper:   wrapper.UseWrapper(),
 		scheduler: NewScheduler(20),
 	}
 	if err := e.setConfig(conf); err != nil {
