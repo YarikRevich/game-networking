@@ -48,14 +48,16 @@ func (e *establisher) setConfig(conf config.Config) error {
 	return nil
 }
 
-func (e *establisher) Call(procedure string, src interface{}, dst interface{}, errc func(error), ank bool) error {
+func (e *establisher) Call(procedure string, src interface{}, dst interface{}, errc func(error), ank bool) {
 	if errc == nil {
-		return errors.New("error callback mustn't be nil")
+		errc(errors.New("error callback mustn't be nil"))
+		return 
 	}
 
 	dstVal := reflect.ValueOf(dst)
 	if dstVal.Kind() != reflect.Ptr && !dstVal.IsNil() {
-		return errors.New("dst should be a pointer")
+		errc(errors.New("dst should be a pointer or nil"))
+		return 
 	}
 
 	call := func() {
@@ -108,7 +110,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 
 	if e.scheduler.CountConfirmations() != 0 {
 		e.scheduler.Schedule(call)
-		return nil
+		return
 	}
 
 	if ank {
@@ -116,8 +118,6 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 	}
 
 	go call()
-
-	return nil
 	// if e.wrapper.GetField("hash_sum").([32]byte) == e.wrapper.GetBase() {
 	// 	//validation by hash_sum
 	// }
