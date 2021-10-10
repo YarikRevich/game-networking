@@ -13,3 +13,9 @@ Fix:
 Fix:
 	- Minimized average CPU utilization
 ---
+
+---
+[v1.1.2] - 10.10.2021
+Feature:
+	- Allowed nil destination and fixed falls of call 
+---
