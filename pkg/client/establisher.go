@@ -55,7 +55,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 	}
 
 	dstVal := reflect.ValueOf(dst)
-	if dstVal.Kind() != reflect.Ptr && !dstVal.IsNil() {
+	if dstVal.IsValid() && dstVal.Kind() != reflect.Ptr && !dstVal.IsNil() {
 		errc(errors.New("dst should be a pointer or nil"))
 		return 
 	}
@@ -103,7 +103,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 			e.scheduler.DecConfirmations()
 		}
 
-		if !dstVal.IsNil() {
+		if dstVal.IsValid() {
 			dstVal.Elem().Set(reflect.ValueOf(p.Msg))
 		}
 	}
