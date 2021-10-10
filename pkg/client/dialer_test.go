@@ -1,11 +1,11 @@
-package dialer
+package client
 
 import (
 	"testing"
 	"time"
 
 	"github.com/YarikRevich/game-networking/config"
-	"github.com/YarikRevich/game-networking/server/pkg/listener"
+	"github.com/YarikRevich/game-networking/pkg/server"
 	"github.com/franela/goblin"
 )
 
@@ -13,7 +13,7 @@ func TestDialer(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("TestDialer", func() {
 		go func(){
-			c, err := listener.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
+			c, err := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
 			c.AddHandler("test", func (m interface{})([]byte, error)  {
 					return []byte("itworks"), nil
 			})
@@ -64,8 +64,6 @@ func TestDialer(t *testing.T) {
 			
 			time.Sleep(2 * time.Second)
 			g.Assert(dst).Eql("itworks")
-			// g.Assert(dst).Eql("itworks")
-			
 		})
 	})
 }

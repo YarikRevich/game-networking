@@ -1,4 +1,4 @@
-package establisher
+package client
 
 import (
 	"bytes"
@@ -9,8 +9,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/YarikRevich/game-networking/client/internal/scheduler"
-	"github.com/YarikRevich/game-networking/common"
 	"github.com/YarikRevich/game-networking/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
 	"github.com/YarikRevich/game-networking/tools/pkg/buffer"
@@ -20,16 +18,10 @@ import (
 
 var poolBuff = buffer.New()
 
-// type ankPool struct {
-// 	sync.Mutex
-// 	count int
-// }
-
 type establisher struct {
 	sync.Mutex
-	// ankPool
 
-	scheduler scheduler.IScheduler
+	scheduler IScheduler
 	addr      *net.UDPAddr
 	conn      *net.UDPConn
 	wrapper   wrapper.Wrapper
@@ -151,10 +143,10 @@ func (e *establisher) Close() error {
 
 //, pm models.ProtocolManager
 
-func New(conf config.Config) (common.Dialer, error) {
+func NewEstablisher(conf config.Config) (Dialer, error) {
 	e := &establisher{
 		wrapper:   wrapper.UseWrapper(),
-		scheduler: scheduler.NewScheduler(20),
+		scheduler: NewScheduler(20),
 	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err

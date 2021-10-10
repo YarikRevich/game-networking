@@ -1,4 +1,4 @@
-package establisher
+package server
 
 import (
 	"bytes"
@@ -7,13 +7,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/YarikRevich/game-networking/common"
-	"github.com/YarikRevich/game-networking/config"
+	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
 
-	// "github.com/YarikRevich/game-networking/server/pkg/handlers"
-	"github.com/YarikRevich/game-networking/tools/pkg/buffer"
-	"github.com/YarikRevich/game-networking/tools/pkg/creators"
+	"github.com/YarikRevich/game-networking/tools/buffer"
+	"github.com/YarikRevich/game-networking/tools/creators"
 )
 
 type establisher struct {
@@ -123,7 +121,7 @@ func (e *establisher) Close() error {
 	return e.conn.Close()
 }
 
-func New(conf config.Config) (common.Listener, error) {
+func NewEstablisher(conf config.Config) (Listener, error) {
 	e := &establisher{
 		buffer: buffer.New(),
 		handlers: make(map[string]func(data interface{}) ([]byte, error)),

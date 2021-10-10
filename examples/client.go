@@ -1,16 +1,16 @@
-package examples_test
+package example
 
 import (
 	"fmt"
 	"syscall"
 	"time"
 
-	"github.com/YarikRevich/game-networking/config"
-	"github.com/YarikRevich/game-networking/server/pkg/listener"
+	"github.com/YarikRevich/game-networking/pkg/config"
+	"github.com/YarikRevich/game-networking/pkg/server"
 )
 
 func ExampleConnect() {
-	conn, _ := listener.Listen(config.Config{
+	conn, _ := server.Listen(config.Config{
 		IP:   "127.0.0.1",
 		Port: "9090",
 	})

@@ -1,11 +1,10 @@
-package tests
+package server
 
 import (
 	"testing"
 	"time"
 
-	"github.com/YarikRevich/game-networking/config"
-	"github.com/YarikRevich/game-networking/server/pkg/listener"
+	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/franela/goblin"
 )
 
@@ -14,7 +13,7 @@ func TestServer(t *testing.T){
 
 	g.Describe("TestServer", func() {
 		g.It("TestListener", func(){
-			c, err := listener.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
+			c, err := Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
 			g.Assert(err).IsNil()
 
 			go func(){
