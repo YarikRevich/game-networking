@@ -1,10 +1,11 @@
 package client
 
 import (
+	"syscall"
 	"testing"
 	"time"
 
-	"github.com/YarikRevich/game-networking/config"
+	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/pkg/server"
 	"github.com/franela/goblin"
 )
@@ -21,7 +22,7 @@ func TestDialer(t *testing.T) {
 	
 			go func(){
 				time.Sleep(15 * time.Second)
-				g.Assert(c.Close()).IsNil()
+				syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 			}()
 			g.Assert(c.WaitForInterrupt()).IsNil()
 		}()

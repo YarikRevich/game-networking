@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/YarikRevich/game-networking/config"
+	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
-	"github.com/YarikRevich/game-networking/tools/pkg/buffer"
-	"github.com/YarikRevich/game-networking/tools/pkg/creators"
+	"github.com/YarikRevich/game-networking/tools/buffer"
+	"github.com/YarikRevich/game-networking/tools/creators"
 	"github.com/YarikRevich/wrapper/pkg/wrapper"
 )
 

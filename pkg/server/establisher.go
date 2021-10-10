@@ -22,7 +22,7 @@ type establisher struct {
 
 	handlers map[string]func(data interface{}) ([]byte, error)
 
-	close chan int
+	closeC chan int
 }
 
 func (e *establisher) establishListening() error {
@@ -51,7 +51,7 @@ func (e *establisher) setConfig(conf config.Config) error {
 func (e *establisher) run() {
 	for {
 		select {
-		case <-e.close:
+		case <-e.closeC:
 			return
 		default:
 			buff := e.buffer.GetFromBuffer().([]byte)
@@ -97,10 +97,10 @@ func (e *establisher) WaitForInterrupt() error {
 	signal.Notify(sig, os.Interrupt)
 	for {
 		select {
-		case <-e.close:
+		case <-e.closeC:
 			return nil
 		case <-sig:
-			return e.Close()
+			return e.close()
 		}
 	}
 }
@@ -116,8 +116,8 @@ func (e *establisher) CallHandler(name string, data interface{}) ([]byte, error)
 	return nil, nil
 }
 
-func (e *establisher) Close() error {
-	e.close <- 1
+func (e *establisher) close() error {
+	e.closeC <- 1
 	return e.conn.Close()
 }
 
@@ -125,7 +125,7 @@ func NewEstablisher(conf config.Config) (Listener, error) {
 	e := &establisher{
 		buffer: buffer.New(),
 		handlers: make(map[string]func(data interface{}) ([]byte, error)),
-		close:  make(chan int, 1),
+		closeC:  make(chan int, 1),
 	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"syscall"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ func TestServer(t *testing.T){
 
 			go func(){
 				time.Sleep(3 * time.Second)
-				g.Assert(c.Close()).IsNil()
+				syscall.Kill(syscall.Getgid(), syscall.SIGINT)
 			}()
 			g.Assert(c.WaitForInterrupt()).IsNil()
 		})
