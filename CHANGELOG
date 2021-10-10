@@ -7,3 +7,9 @@ Feature:
 Fix:
 	- Removed unimportant components
 ---
+
+---
+[v1.1.1] - 10.10.2021
+Fix:
+	- Minimized average CPU utilization
+---
