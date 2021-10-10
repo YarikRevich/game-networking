@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
@@ -23,6 +24,7 @@ type establisher struct {
 	handlers map[string]func(data interface{}) ([]byte, error)
 
 	closeC chan int
+	surveyC *time.Ticker
 }
 
 func (e *establisher) establishListening() error {
@@ -53,7 +55,7 @@ func (e *establisher) run() {
 		select {
 		case <-e.closeC:
 			return
-		default:
+		case <- e.surveyC.C:
 			buff := e.buffer.GetFromBuffer().([]byte)
 
 			_, addr, err := e.conn.ReadFromUDP(buff)
@@ -85,7 +87,7 @@ func (e *establisher) run() {
 				}
 			}
 
-			if cap(buff) <= 20*1024 {
+			if cap(buff) <= 60*1024 {
 				e.buffer.PutToBuffer(buff[:0])
 			}
 		}
@@ -118,6 +120,7 @@ func (e *establisher) CallHandler(name string, data interface{}) ([]byte, error)
 
 func (e *establisher) close() error {
 	e.closeC <- 1
+	e.surveyC.Stop()
 	return e.conn.Close()
 }
 
@@ -126,6 +129,7 @@ func NewEstablisher(conf config.Config) (Listener, error) {
 		buffer: buffer.New(),
 		handlers: make(map[string]func(data interface{}) ([]byte, error)),
 		closeC:  make(chan int, 1),
+		surveyC: time.NewTicker(time.Microsecond * 350),
 	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err
