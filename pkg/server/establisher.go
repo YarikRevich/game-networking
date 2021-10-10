@@ -21,7 +21,7 @@ type establisher struct {
 	addr *net.UDPAddr
 	conn *net.UDPConn
 
-	handlers map[string]func(data interface{}) ([]byte, error)
+	handlers map[string]func(data []byte) ([]byte, error)
 
 	closeC chan int
 	surveyC *time.Ticker
@@ -72,7 +72,7 @@ func (e *establisher) run() {
 					continue
 				}
 
-				r, err := e.CallHandler(p.Procedure, p.Msg)
+				r, err := e.CallHandler(p.Procedure, buff)
 				
 				p.Msg = string(r)
 				p.Error = err
@@ -107,11 +107,11 @@ func (e *establisher) WaitForInterrupt() error {
 	}
 }
 
-func (e *establisher) AddHandler(name string, callback func(data interface{}) ([]byte, error)) {
+func (e *establisher) AddHandler(name string, callback func(data []byte) ([]byte, error)) {
 	e.handlers[name] = callback
 }
 
-func (e *establisher) CallHandler(name string, data interface{}) ([]byte, error) {
+func (e *establisher) CallHandler(name string, data []byte) ([]byte, error) {
 	if v, ok := e.handlers[name]; ok {
 		return v(data)
 	}
@@ -127,7 +127,7 @@ func (e *establisher) close() error {
 func NewEstablisher(conf config.Config) (Listener, error) {
 	e := &establisher{
 		buffer: buffer.New(),
-		handlers: make(map[string]func(data interface{}) ([]byte, error)),
+		handlers: make(map[string]func(data []byte) ([]byte, error)),
 		closeC:  make(chan int, 1),
 		surveyC: time.NewTicker(time.Microsecond * 350),
 	}
