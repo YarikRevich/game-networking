@@ -59,10 +59,12 @@ func TestDialer(t *testing.T) {
 			time.Sleep(2 * time.Second)
 			g.Assert(dst).Eql("itworks")
 
+			dst = ""
 			g.Assert(d.Call("test", src, &dst, func(e error) { panic(err) }, true)).IsNil()
 			
 			time.Sleep(2 * time.Second)
 			g.Assert(dst).Eql("itworks")
+			// g.Assert(dst).Eql("itworks")
 			
 		})
 	})

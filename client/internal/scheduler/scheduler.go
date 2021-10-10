@@ -9,7 +9,7 @@ type scheduler struct {
 	sync.Mutex
 	scheduled     int
 	confirmations int
-	limit         int
+	capacity         int
 }
 
 type IScheduler interface {
@@ -21,8 +21,17 @@ type IScheduler interface {
 }
 
 func (s *scheduler) Schedule(c func()) {
+	if s.capacity == 0{
+		c()
+		s.Lock()
+		s.capacity--
+		s.Unlock()
+		return
+	}
+
 	s.Lock()
 	s.scheduled++
+	s.capacity--
 	s.Unlock()
 	go func() {
 		ticker := time.NewTicker(time.Second)
@@ -57,6 +66,6 @@ func (s *scheduler) DecConfirmations() {
 	s.Unlock()
 }
 
-func NewScheduler(limit int) IScheduler {
-	return &scheduler{limit: limit}
+func NewScheduler(capacity int) IScheduler {
+	return &scheduler{capacity: capacity}
 }
