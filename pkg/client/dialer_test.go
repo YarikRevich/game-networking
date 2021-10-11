@@ -24,7 +24,7 @@ func TestDialer(t *testing.T) {
 			c.AddHandler("3", func(m []byte) ([]byte, error) {
 				return []byte("3"), nil
 			})
-			g.Assert(err).IsNil()
+			g.Assert(err).IsNil("Connection refused")
 
 			go func() {
 				time.Sleep(15 * time.Second)

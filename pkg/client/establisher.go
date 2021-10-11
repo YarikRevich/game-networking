@@ -122,7 +122,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 				errc(err)
 				return
 			}
-			if p.HashSum != hash {
+			if p.HashSum != hash || p.Procedure != procedure {
 				continue main
 			}
 
