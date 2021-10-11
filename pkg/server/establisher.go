@@ -86,7 +86,8 @@ func (e *establisher) run() {
 					continue
 				}
 
-				if _, err := e.conn.WriteTo(b, addr); err != nil {
+
+				if _, err = e.conn.WriteTo(b, addr); err != nil{
 					continue
 				}
 			}

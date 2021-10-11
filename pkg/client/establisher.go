@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
@@ -51,95 +51,96 @@ func (e *establisher) setConfig(conf config.Config) error {
 func (e *establisher) Call(procedure string, src interface{}, dst interface{}, errc func(error), ank bool) {
 	if errc == nil {
 		errc(errors.New("error callback mustn't be nil"))
-		return 
+		return
 	}
 
 	dstVal := reflect.ValueOf(dst)
-	if dstVal.IsValid() && dstVal.Kind() != reflect.Ptr && !dstVal.IsNil() {
+	if dstVal.IsValid() && dstVal.Kind() != reflect.Ptr{
 		errc(errors.New("dst should be a pointer or nil"))
-		return 
+		return
 	}
+		hash, err := GenerateHashSum(src)
+		if err != nil{
+			errc(err)
+			return
+		}
 
-	call := func() {
-		m := protocol.Protocol{Procedure: procedure, Msg: src}
+		m := protocol.Protocol{Procedure: procedure, Msg: src, HashSum: hash}
 		b, err := json.Marshal(m)
 		if err != nil {
 			errc(err)
 			return
 		}
 
-		_, err = e.conn.Write(b)
-		if err != nil {
-			errc(err)
-			return
+	main:
+		for {
+		write:
+			for {
+				if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+					errc(err)
+				}
+			
+				_, err = e.conn.Write(b)
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					continue write
+				}
+				if err != nil {
+					errc(err)
+				}
+			
+
+				break write
+			}
+
+			buff := poolBuff.GetFromBuffer().([]byte)
+
+		read:
+			for {
+				if err := e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+					errc(err)
+				}
+				
+				n, err := e.conn.Read(buff)
+				if n == 0{
+					continue main
+				}
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					continue read
+				}
+				if err != nil {
+					errc(err)
+				}
+
+				break read
+			}
+
+			buff = bytes.Trim(buff, "\x00")
+
+			var p protocol.Protocol
+			err = json.Unmarshal(buff, &p)
+			if err != nil {
+				errc(err)
+				return
+			}
+			if p.HashSum != hash {
+				continue main
+			}
+
+			if cap(buff) <= 40*1024 {
+				poolBuff.PutToBuffer(buff[:0])
+			}
+
+			if dstVal.IsValid() && p.Msg != nil {
+				dstVal.Elem().Set(reflect.ValueOf(p.Msg))
+			}
+
+			break main
 		}
-
-		buff := poolBuff.GetFromBuffer().([]byte)
-
-		_, err = e.conn.Read(buff)
-		if err != nil {
-			errc(err)
-			return
-		}
-
-		buff = bytes.Trim(buff, "\x00")
-
-		var p protocol.Protocol
-		err = json.Unmarshal(buff, &p)
-		if err != nil {
-			errc(err)
-			return
-		}
-		if cap(buff) <= 20*1024 {
-			poolBuff.PutToBuffer(buff[:0])
-		}
-
-		if p.Msg == nil {
-			errc(fmt.Errorf("message is empty: %w", err))
-			return
-		}
-
-		if ank {
-			e.scheduler.DecConfirmations()
-		}
-
-		if dstVal.IsValid() {
-			dstVal.Elem().Set(reflect.ValueOf(p.Msg))
-		}
-	}
-
-	if e.scheduler.CountConfirmations() != 0 {
-		e.scheduler.Schedule(call)
-		return
-	}
-
-	if ank {
-		e.scheduler.IncConfirmations()
-	}
-
-	go call()
-	// if e.wrapper.GetField("hash_sum").([32]byte) == e.wrapper.GetBase() {
-	// 	//validation by hash_sum
-	// }
-
-	// return e.wrapper.GetBase().([]byte), nil
 }
 
 func (e *establisher) Close() error {
 	return e.conn.Close()
 }
-
-// func (e *Establisher) SetReadDeadLine() error {
-// 	rt := e.timeout.GetReadTimeout()
-// 	return e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(rt)))
-// }
-
-// func (e *Establisher) SetWriteDeadLine() error {
-// 	wt := e.timeout.GetWriteTimeout()
-// 	return e.conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(wt)))
-// }
-
-//, pm models.ProtocolManager
 
 func NewEstablisher(conf config.Config) (Dialer, error) {
 	e := &establisher{

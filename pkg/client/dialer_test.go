@@ -13,14 +13,20 @@ import (
 func TestDialer(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("TestDialer", func() {
-		go func(){
+		go func() {
 			c, err := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
-			c.AddHandler("test", func (m []byte)([]byte, error)  {
-					return []byte("itworks"), nil
+			c.AddHandler("1", func(m []byte) ([]byte, error) {
+				return []byte("1"), nil
+			})
+			c.AddHandler("2", func(m []byte) ([]byte, error) {
+				return []byte("2"), nil
+			})
+			c.AddHandler("3", func(m []byte) ([]byte, error) {
+				return []byte("3"), nil
 			})
 			g.Assert(err).IsNil()
-	
-			go func(){
+
+			go func() {
 				time.Sleep(15 * time.Second)
 				syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 			}()
@@ -30,41 +36,39 @@ func TestDialer(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		clientConfig := config.Config{
-			IP: "127.0.0.1", 
-			Port: "8090", 
+			IP:   "127.0.0.1",
+			Port: "8090",
 		}
 
 		d, err := Dial(clientConfig)
 		g.Assert(err).IsNil()
 
-		g.After(func() {
-			g.Assert(d.Close())
-		})
-
-		g.It("dial call", func() {
-	
-
-			var dst string
-			src := "itworks"
-			d.Call("test", src, &dst, func(e error) { t.Fatal(err) }, false)
-			time.Sleep(2 * time.Second)
-			g.Assert(dst).Eql("itworks")
-
+		g.After(func(){
+			time.Sleep(time.Second * 5)
+			g.Assert(d.Close()).IsNil()
 		})
 
 		g.It("dial call, test ank", func() {
-			var dst string
-			src := "itworks"
-			d.Call("test", src, &dst, func(e error) { t.Fatal(err) }, true)
-			
-			time.Sleep(2 * time.Second)
-			g.Assert(dst).Eql("itworks")
+			var first string
+			d.Call("1", nil, &first, func(e error) { t.Fatal(err) }, true)
 
-			dst = ""
-			d.Call("test", src, &dst, func(e error) { t.Fatal(e) }, true)
-			
-			time.Sleep(2 * time.Second)
-			g.Assert(dst).Eql("itworks")
+			var second string
+			d.Call("2", nil, &second, func(e error) { t.Fatal(e) }, true)
+
+			var stub string
+			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
+			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
+			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
+			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
+
+			var third string
+			d.Call("3", nil, &third, func(e error) { t.Fatal(e) }, true)
+
+			// time.Sleep(1 * time.Second)
+			t.Log(first, second, third)
+			g.Assert(first).Eql("1")
+			g.Assert(second).Eql("2")
+			g.Assert(third).Eql("3")
 		})
 	})
 }

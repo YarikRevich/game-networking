@@ -2,22 +2,29 @@ package client
 
 import (
 	"sync"
-	"time"
 )
 
 type scheduler struct {
 	sync.Mutex
-	scheduled     int
 	confirmations int
 	capacity         int
+	scheduled chan func()
 }
 
 type IScheduler interface {
 	Schedule(func())
-	CountScheduled() int
 	CountConfirmations() int
 	IncConfirmations()
 	DecConfirmations()
+}
+
+func (s *scheduler) loop(){
+	for {
+		select {
+		case c := <- s.scheduled:
+			c()
+		}
+	}
 }
 
 func (s *scheduler) Schedule(c func()) {
@@ -29,26 +36,28 @@ func (s *scheduler) Schedule(c func()) {
 		return
 	}
 
-	s.Lock()
-	s.scheduled++
-	s.capacity--
-	s.Unlock()
-	go func() {
-		ticker := time.NewTicker(time.Second)
-		for range ticker.C {
-			if s.confirmations == 0 {
-				go c()
-				s.Lock()
-				s.confirmations--
-				s.Unlock()
-			}
-		}
-	}()
+	s.scheduled <- c
+
+	// s.Lock()
+	// s.capacity--
+	// s.Unlock()
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go func() {
+	// 	wg.Done()
+	// 	for {
+	// 		if s.confirmations == 0 {
+	// 			c()
+	// 			s.Lock()
+	// 			s.confirmations--
+	// 			s.Unlock()
+	// 			break
+	// 		}
+	// 	}
+	// }()
+	// wg.Wait()
 }
 
-func (s *scheduler) CountScheduled() int {
-	return s.scheduled
-}
 
 func (s *scheduler) CountConfirmations() int {
 	return s.confirmations
@@ -67,5 +76,7 @@ func (s *scheduler) DecConfirmations() {
 }
 
 func NewScheduler(capacity int) IScheduler {
-	return &scheduler{capacity: capacity}
+	s := &scheduler{capacity: capacity}
+	go s.loop()
+	return s
 }

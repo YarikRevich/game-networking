@@ -1,11 +1,9 @@
 package protocol
 
-type Service struct {
-	HashSum [32]byte `json:"hash_sum"`
-}
+import "crypto/sha256"
 
 type Protocol struct {
-	Service
+	HashSum [sha256.Size]byte `json:"hash_sum"`
 	Procedure string `json:"procedure"`
 	Msg interface{} `json:"msg"`
 	Error error `json:"error"`
