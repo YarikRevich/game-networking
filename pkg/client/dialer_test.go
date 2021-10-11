@@ -10,19 +10,24 @@ import (
 	"github.com/franela/goblin"
 )
 
+type ResultStub struct {
+	Result string
+}
+
 func TestDialer(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("TestDialer", func() {
 		go func() {
 			c, err := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
-			c.AddHandler("1", func(m []byte) ([]byte, error) {
-				return []byte("1"), nil
+			c.AddHandler("1", func(m []byte) (interface{}, error) {
+				return ResultStub{Result: "1"}, nil
 			})
-			c.AddHandler("2", func(m []byte) ([]byte, error) {
-				return []byte("2"), nil
+			c.AddHandler("2", func(m []byte) (interface{}, error) {
+				return ResultStub{Result: "2"}, nil
 			})
-			c.AddHandler("3", func(m []byte) ([]byte, error) {
-				return []byte("3"), nil
+			c.AddHandler("3", func(m []byte) (interface{}, error) {
+				
+				return ResultStub{Result: "3"}, nil
 			})
 			g.Assert(err).IsNil("Connection refused")
 
@@ -49,26 +54,27 @@ func TestDialer(t *testing.T) {
 		})
 
 		g.It("dial call, test ank", func() {
-			var first string
+			
+
+			var first ResultStub
 			d.Call("1", nil, &first, func(e error) { t.Fatal(err) }, true)
 
-			var second string
+			var second ResultStub
 			d.Call("2", nil, &second, func(e error) { t.Fatal(e) }, true)
 
-			var stub string
+			var stub ResultStub
 			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
 			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
 			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
 			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
 
-			var third string
+			var third ResultStub
 			d.Call("3", nil, &third, func(e error) { t.Fatal(e) }, true)
 
-			// time.Sleep(1 * time.Second)
 			t.Log(first, second, third)
-			g.Assert(first).Eql("1")
-			g.Assert(second).Eql("2")
-			g.Assert(third).Eql("3")
+			g.Assert(first.Result).Eql("1")
+			g.Assert(second.Result).Eql("2")
+			g.Assert(third.Result).Eql("3")
 		})
 	})
 }

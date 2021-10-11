@@ -20,7 +20,6 @@ var poolBuff = buffer.New()
 type establisher struct {
 	sync.Mutex
 
-	scheduler IScheduler
 	addr      *net.UDPAddr
 	conn      *net.UDPConn
 }
@@ -55,7 +54,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 	}
 
 	dstVal := reflect.ValueOf(dst)
-	if dstVal.IsValid() && dstVal.Kind() != reflect.Ptr{
+	if dstVal.IsValid() && (dstVal.Kind() != reflect.Ptr && dstVal.Kind() != reflect.Slice){
 		errc(errors.New("dst should be a pointer or nil"))
 		return
 	}
@@ -125,15 +124,22 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}, e
 			if p.HashSum != hash || p.Procedure != procedure {
 				continue main
 			}
-
+			
 			if cap(buff) <= 40*1024 {
 				poolBuff.PutToBuffer(buff[:0])
 			}
 
-			if dstVal.IsValid() && p.Msg != nil {
-				dstVal.Elem().Set(reflect.ValueOf(p.Msg))
-			}
 
+			ParseToDst(p.Msg, dstVal)
+
+			// fmt.Println(reflect.ValueOf(t).Convert(dstVal.Elem().Type()))
+			// fmt.Println(p.Msg.(ResultStub))
+			
+			// if dstVal.IsValid() && p.Msg != nil {
+			// 	dstVal.Elem().Set(reflect.ValueOf(p.Msg))
+			// }
+			
+			
 			break main
 		}
 }
@@ -143,9 +149,7 @@ func (e *establisher) Close() error {
 }
 
 func NewEstablisher(conf config.Config) (Dialer, error) {
-	e := &establisher{
-		scheduler: NewScheduler(20),
-	}
+	e := new(establisher)
 	if err := e.setConfig(conf); err != nil {
 		return nil, err
 	}
