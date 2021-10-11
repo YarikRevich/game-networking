@@ -21,9 +21,9 @@ type establisher struct {
 	addr *net.UDPAddr
 	conn *net.UDPConn
 
-	handlers map[string]func(data []byte) ([]byte, error)
+	handlers map[string]func(data []byte) (interface{}, error)
 
-	closeC chan int
+	closeC  chan int
 	surveyC *time.Ticker
 }
 
@@ -55,7 +55,7 @@ func (e *establisher) run() {
 		select {
 		case <-e.closeC:
 			return
-		case <- e.surveyC.C:
+		case <-e.surveyC.C:
 			buff := e.buffer.GetFromBuffer().([]byte)
 
 			_, addr, err := e.conn.ReadFromUDP(buff)
@@ -73,12 +73,11 @@ func (e *establisher) run() {
 				}
 
 				b, err := json.Marshal(p.Msg)
-				if err != nil{
+				if err != nil {
 					continue
 				}
-				r, err := e.CallHandler(p.Procedure, b)
-				
-				p.Msg = string(r)
+				r, err := e.CallHandler(p.Procedure, b)			
+				p.Msg = r
 				p.Error = err
 
 				b, err = json.Marshal(p)
@@ -86,8 +85,7 @@ func (e *establisher) run() {
 					continue
 				}
 
-
-				if _, err = e.conn.WriteTo(b, addr); err != nil{
+				if _, err = e.conn.WriteTo(b, addr); err != nil {
 					continue
 				}
 			}
@@ -112,11 +110,11 @@ func (e *establisher) WaitForInterrupt() error {
 	}
 }
 
-func (e *establisher) AddHandler(name string, callback func(data []byte) ([]byte, error)) {
+func (e *establisher) AddHandler(name string, callback func(data []byte) (interface{}, error)) {
 	e.handlers[name] = callback
 }
 
-func (e *establisher) CallHandler(name string, data []byte) ([]byte, error) {
+func (e *establisher) CallHandler(name string, data []byte) (interface{}, error) {
 	if v, ok := e.handlers[name]; ok {
 		return v(data)
 	}
@@ -131,10 +129,10 @@ func (e *establisher) close() error {
 
 func NewEstablisher(conf config.Config) (Listener, error) {
 	e := &establisher{
-		buffer: buffer.New(),
-		handlers: make(map[string]func(data []byte) ([]byte, error)),
-		closeC:  make(chan int, 1),
-		surveyC: time.NewTicker(time.Microsecond * 350),
+		buffer:   buffer.New(),
+		handlers: make(map[string]func(data []byte) (interface{}, error)),
+		closeC:   make(chan int, 1),
+		surveyC:  time.NewTicker(time.Microsecond * 350),
 	}
 	if err := e.setConfig(conf); err != nil {
 		return nil, err

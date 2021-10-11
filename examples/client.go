@@ -15,7 +15,7 @@ func ExampleConnect() {
 		Port: "9090",
 	})
 
-	conn.AddHandler("ping", func(data []byte) ([]byte, error){
+	conn.AddHandler("ping", func(data []byte) (interface{}, error){
 		return []byte("ping"), nil
 	})
 
