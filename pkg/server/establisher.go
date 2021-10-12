@@ -11,6 +11,8 @@ import (
 	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/YarikRevich/game-networking/tools/buffer"
 	"github.com/YarikRevich/game-networking/tools/creators"
 )
@@ -21,33 +23,31 @@ type establisher struct {
 	addr *net.UDPAddr
 	conn *net.UDPConn
 
-	handlers map[string]func(data []byte) (interface{}, error)
+	handlers map[string]func(data interface{}) (interface{}, error)
 
 	closeC  chan int
 	surveyC *time.Ticker
 }
 
-func (e *establisher) establishListening() error {
+func (e *establisher) establishListening() {
 	conn, err := net.ListenUDP("udp", e.addr)
 	if err != nil {
-		return err
+		logrus.Fatal(err)
 	}
 	e.conn = conn
-	return nil
 }
 
-func (e *establisher) setConfig(conf config.Config) error {
+func (e *establisher) setConfig(conf config.Config) {
 	createdAddr, err := creators.CreateAddr(conf.IP, conf.Port)
 	if err != nil {
-		return err
+		logrus.Fatal(err)
 	}
 
 	addr, err := net.ResolveUDPAddr("udp", createdAddr)
 	if err != nil {
-		return err
+		logrus.Fatal(err)
 	}
 	e.addr = addr
-	return nil
 }
 
 func (e *establisher) run() {
@@ -72,15 +72,14 @@ func (e *establisher) run() {
 					continue
 				}
 
-				b, err := json.Marshal(p.Msg)
-				if err != nil {
-					continue
+				r, err := e.CallHandler(p.Procedure, p.Msg)
+				if err != nil{
+					logrus.Fatal(err)
 				}
-				r, err := e.CallHandler(p.Procedure, b)			
-				p.Msg = r
-				p.Error = err
 
-				b, err = json.Marshal(p)
+				p.Msg = r
+
+				b, err := json.Marshal(p)
 				if err != nil {
 					continue
 				}
@@ -110,11 +109,11 @@ func (e *establisher) WaitForInterrupt() error {
 	}
 }
 
-func (e *establisher) AddHandler(name string, callback func(data []byte) (interface{}, error)) {
+func (e *establisher) AddHandler(name string, callback func(data interface{}) (interface{}, error)) {
 	e.handlers[name] = callback
 }
 
-func (e *establisher) CallHandler(name string, data []byte) (interface{}, error) {
+func (e *establisher) CallHandler(name string, data interface{}) (interface{}, error) {
 	if v, ok := e.handlers[name]; ok {
 		return v(data)
 	}
@@ -127,19 +126,15 @@ func (e *establisher) close() error {
 	return e.conn.Close()
 }
 
-func NewEstablisher(conf config.Config) (Listener, error) {
+func NewEstablisher(conf config.Config) Listener {
 	e := &establisher{
 		buffer:   buffer.New(),
-		handlers: make(map[string]func(data []byte) (interface{}, error)),
+		handlers: make(map[string]func(data interface{}) (interface{}, error)),
 		closeC:   make(chan int, 1),
 		surveyC:  time.NewTicker(time.Microsecond * 350),
 	}
-	if err := e.setConfig(conf); err != nil {
-		return nil, err
-	}
-	if err := e.establishListening(); err != nil {
-		return nil, err
-	}
+	e.setConfig(conf)
+	e.establishListening()
 	go e.run()
-	return e, nil
+	return e
 }

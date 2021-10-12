@@ -10,12 +10,12 @@ import (
 )
 
 func ExampleConnect() {
-	conn, _ := server.Listen(config.Config{
+	conn := server.Listen(config.Config{
 		IP:   "127.0.0.1",
 		Port: "9090",
 	})
 
-	conn.AddHandler("ping", func(data []byte) (interface{}, error){
+	conn.AddHandler("ping", func(data interface{}) (interface{}, error){
 		return []byte("ping"), nil
 	})
 

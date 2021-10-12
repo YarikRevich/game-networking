@@ -18,18 +18,16 @@ func TestDialer(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("TestDialer", func() {
 		go func() {
-			c, err := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
-			c.AddHandler("1", func(m []byte) (interface{}, error) {
+			c := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
+			c.AddHandler("1", func(m interface{}) (interface{}, error) {
 				return ResultStub{Result: "1"}, nil
 			})
-			c.AddHandler("2", func(m []byte) (interface{}, error) {
+			c.AddHandler("2", func(m interface{}) (interface{}, error) {
 				return ResultStub{Result: "2"}, nil
 			})
-			c.AddHandler("3", func(m []byte) (interface{}, error) {
-				
+			c.AddHandler("3", func(m interface{}) (interface{}, error) {
 				return ResultStub{Result: "3"}, nil
 			})
-			g.Assert(err).IsNil("Connection refused")
 
 			go func() {
 				time.Sleep(15 * time.Second)
@@ -45,8 +43,7 @@ func TestDialer(t *testing.T) {
 			Port: "8090",
 		}
 
-		d, err := Dial(clientConfig)
-		g.Assert(err).IsNil()
+		d := Dial(clientConfig)
 
 		g.After(func(){
 			time.Sleep(time.Second * 5)
@@ -54,24 +51,20 @@ func TestDialer(t *testing.T) {
 		})
 
 		g.It("dial call, test ank", func() {
-			
-
 			var first ResultStub
-			d.Call("1", nil, &first, func(e error) { t.Fatal(err) }, true)
+			d.Call("1", nil, &first)
+
 
 			var second ResultStub
-			d.Call("2", nil, &second, func(e error) { t.Fatal(e) }, true)
+			d.Call("2", nil, &second)
 
 			var stub ResultStub
-			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
-			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
-			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
-			d.Call("3", nil, &stub, func(e error) { t.Fatal(e) }, true)
+			d.Call("3", nil, &stub)
+			d.Call("3", nil, &stub)
 
 			var third ResultStub
-			d.Call("3", nil, &third, func(e error) { t.Fatal(e) }, true)
+			d.Call("3", nil, &third)
 
-			t.Log(first, second, third)
 			g.Assert(first.Result).Eql("1")
 			g.Assert(second.Result).Eql("2")
 			g.Assert(third.Result).Eql("3")

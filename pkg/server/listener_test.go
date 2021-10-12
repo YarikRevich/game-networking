@@ -13,10 +13,7 @@ func TestServer(t *testing.T){
 	g := goblin.Goblin(t)
 
 	g.Describe("TestServer", func() {
-			c, err := Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
-			if err != nil{
-				t.Fatal(err)
-			}
+			c := Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
 
 			go func(){
 				time.Sleep(150 * time.Second)

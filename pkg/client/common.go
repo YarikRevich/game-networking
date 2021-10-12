@@ -1,6 +1,6 @@
 package client
 
 type Dialer interface {
-	Call(string, interface{}, interface{}, func(error), bool)
+	Call(string, interface{}, interface{})
 	Close() error
 }
