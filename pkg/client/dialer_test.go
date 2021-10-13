@@ -19,14 +19,24 @@ func TestDialer(t *testing.T) {
 	g.Describe("TestDialer", func() {
 		go func() {
 			c := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
-			c.AddHandler("1", func(m interface{}) (interface{}, error) {
-				return ResultStub{Result: "1"}, nil
+			c.AddHandler("one_level_slice_1", func(m interface{}) (interface{}, error) {
+				return []ResultStub{{Result: "1"}}, nil
 			})
-			c.AddHandler("2", func(m interface{}) (interface{}, error) {
-				return ResultStub{Result: "2"}, nil
+			c.AddHandler("one_level_slice_2", func(m interface{}) (interface{}, error) {
+				return []ResultStub{{Result: "2"}}, nil
 			})
-			c.AddHandler("3", func(m interface{}) (interface{}, error) {
-				return ResultStub{Result: "3"}, nil
+			c.AddHandler("one_level_slice_3", func(m interface{}) (interface{}, error) {
+				return []ResultStub{{Result: "3"}}, nil
+			})
+
+			c.AddHandler("mult_level_slice_1", func(m interface{}) (interface{}, error) {
+				return [][]ResultStub{{{Result: "1"}}}, nil
+			})
+			c.AddHandler("mult_level_slice_2", func(m interface{}) (interface{}, error) {
+				return [][]ResultStub{{{Result: "2"}}}, nil
+			})
+			c.AddHandler("mult_level_slice_3", func(m interface{}) (interface{}, error) {
+				return [][]ResultStub{{{Result: "3"}}}, nil
 			})
 
 			go func() {
@@ -50,24 +60,42 @@ func TestDialer(t *testing.T) {
 			g.Assert(d.Close()).IsNil()
 		})
 
-		g.It("dial call, test ank", func() {
-			var first ResultStub
-			d.Call("1", nil, &first)
+		g.It("dial call, test one level slice dst", func() {
+			var first []ResultStub
+			d.Call("one_level_slice_1", nil, &first)
 
+			var second []ResultStub
+			d.Call("one_level_slice_2", nil, &second)
 
-			var second ResultStub
-			d.Call("2", nil, &second)
+			var stub []ResultStub
+			d.Call("one_level_slice_3", nil, &stub)
+			d.Call("one_level_slice_3", nil, &stub)
 
-			var stub ResultStub
-			d.Call("3", nil, &stub)
-			d.Call("3", nil, &stub)
+			var third []ResultStub
+			d.Call("one_level_slice_3", nil, &third)
 
-			var third ResultStub
-			d.Call("3", nil, &third)
+			g.Assert(len(first)).Eql(1)
+			g.Assert(len(second)).Eql(1)
+			g.Assert(len(third)).Eql(1)
+		})
 
-			g.Assert(first.Result).Eql("1")
-			g.Assert(second.Result).Eql("2")
-			g.Assert(third.Result).Eql("3")
+		g.It("dial call, test multiple level slice dst", func() {
+			var first [][]ResultStub
+			d.Call("mult_level_slice_1", nil, &first)
+
+			var second [][]ResultStub
+			d.Call("mult_level_slice_2", nil, &second)
+
+			var stub [][]ResultStub
+			d.Call("mult_level_slice_3", nil, &stub)
+			d.Call("mult_level_slice_3", nil, &stub)
+
+			var third [][]ResultStub
+			d.Call("mult_level_slice_3", nil, &third)
+
+			g.Assert(len(first[0])).Eql(1)
+			g.Assert(len(second[0])).Eql(1)
+			g.Assert(len(third[0])).Eql(1)
 		})
 	})
 }

@@ -48,9 +48,11 @@ func (e *establisher) setConfig(conf config.Config) {
 
 func (e *establisher) Call(procedure string, src interface{}, dst interface{}) {
 	dstVal := reflect.ValueOf(dst)
+
 	if dstVal.IsValid() && (dstVal.Kind() != reflect.Ptr && dstVal.Kind() != reflect.Slice) {
 		logrus.Fatal(errors.New("dst should be a pointer or nil"))
 	}
+
 	hash, err := GenerateHashSum(src)
 	if err != nil {
 		logrus.Fatal(err)
@@ -119,7 +121,7 @@ main:
 		}
 
 		if dstVal.IsValid() && p.Msg != nil {
-			ParseToDst(p.Msg, dstVal)
+			NewParser().Parse(p.Msg, dstVal)
 		}
 
 		break main
