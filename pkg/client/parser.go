@@ -1,6 +1,9 @@
 package client
 
-import "reflect"
+import (
+	// "fmt"
+	"reflect"
+)
 
 type parser struct{}
 
@@ -10,10 +13,28 @@ type IParser interface {
 
 func (p *parser) parseMap(src map[string]interface{}, dst reflect.Value) {
 	for k, v := range src {
-		f := dst.Elem().FieldByName(k)
-		if f.Kind() == reflect.Ptr {
-			f.Elem().Set(reflect.ValueOf(v))
-		} else {
+		var f reflect.Value
+		if dst.Kind() == reflect.Ptr{
+			f = dst.Elem().FieldByName(k)
+		}else{
+			f = dst.FieldByName(k) 
+		}
+
+		switch f.Kind() {
+		case reflect.Struct:
+			p.parseMap(v.(map[string]interface{}), f)
+		case reflect.Map:
+			p.parseMap(v.(map[string]interface{}), f)
+		case reflect.Ptr:
+			f.Elem().Set(reflect.ValueOf(v).Convert(f.Type()))
+
+		default:
+			// vf := reflect.ValueOf(v)
+			// if f.Kind() != vf.Kind(){
+			// 	vf.Convert(f.Type())
+			// }
+			
+			// reflect.TypeOf()
 			f.Set(reflect.ValueOf(v))
 		}
 	}

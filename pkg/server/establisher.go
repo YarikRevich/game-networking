@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/YarikRevich/game-networking/pkg/config"
-	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
+	"github.com/YarikRevich/game-networking/pkg/protocol"
 
 	"github.com/sirupsen/logrus"
 

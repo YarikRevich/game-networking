@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/YarikRevich/game-networking/pkg/config"
-	"github.com/YarikRevich/game-networking/protocol/pkg/protocol"
+	"github.com/YarikRevich/game-networking/pkg/protocol"
 	"github.com/YarikRevich/game-networking/tools/buffer"
 	"github.com/YarikRevich/game-networking/tools/creators"
 	"github.com/sirupsen/logrus"
@@ -58,7 +58,7 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}) {
 		logrus.Fatal(err)
 	}
 
-	m := protocol.Protocol{Procedure: procedure, Msg: src, HashSum: hash}
+	m := protocol.Protocol{Msg: src, HashSum: hash, Procedure: procedure}
 	b, err := json.Marshal(m)
 	if err != nil {
 		logrus.Fatal(err)
@@ -119,9 +119,15 @@ main:
 		if cap(buff) <= 40*1024 {
 			poolBuff.PutToBuffer(buff[:0])
 		}
+		// fmt.Println(string(buff))
 
-		if dstVal.IsValid() && p.Msg != nil {
-			NewParser().Parse(p.Msg, dstVal)
+		var m struct {Msg json.RawMessage}
+		if err := json.Unmarshal(buff, &m); err != nil{
+			logrus.Fatal(err)
+		}
+
+		if err := json.Unmarshal(m.Msg, &dst); err != nil{
+			logrus.Fatal(err)
 		}
 
 		break main

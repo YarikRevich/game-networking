@@ -8,35 +8,43 @@ import (
 	"github.com/YarikRevich/game-networking/pkg/config"
 	"github.com/YarikRevich/game-networking/pkg/server"
 	"github.com/franela/goblin"
+	"github.com/google/uuid"
 )
 
 type ResultStub struct {
 	Result string
+	Stack struct {
+		Key string
+		Value string
+		ID uuid.UUID
+	}
 }
 
 func TestDialer(t *testing.T) {
 	g := goblin.Goblin(t)
+
 	g.Describe("TestDialer", func() {
 		go func() {
 			c := server.Listen(config.Config{IP: "127.0.0.1", Port: "8090"})
+
 			c.AddHandler("one_level_slice_1", func(m interface{}) (interface{}, error) {
-				return []ResultStub{{Result: "1"}}, nil
+				return []ResultStub{{Result: "1", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitsky", ID: uuid.New()}}}, nil
 			})
 			c.AddHandler("one_level_slice_2", func(m interface{}) (interface{}, error) {
-				return []ResultStub{{Result: "2"}}, nil
+				return []ResultStub{{Result: "2", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitskyi", ID: uuid.New()}}}, nil
 			})
 			c.AddHandler("one_level_slice_3", func(m interface{}) (interface{}, error) {
-				return []ResultStub{{Result: "3"}}, nil
+				return []ResultStub{{Result: "3", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitskyi", ID: uuid.New()}}}, nil
 			})
 
 			c.AddHandler("mult_level_slice_1", func(m interface{}) (interface{}, error) {
-				return [][]ResultStub{{{Result: "1"}}}, nil
+				return [][]ResultStub{{{Result: "1", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitskyi", ID: uuid.New()}}}}, nil
 			})
 			c.AddHandler("mult_level_slice_2", func(m interface{}) (interface{}, error) {
-				return [][]ResultStub{{{Result: "2"}}}, nil
+				return [][]ResultStub{{{Result: "2", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitskyi", ID: uuid.New()}}}}, nil
 			})
 			c.AddHandler("mult_level_slice_3", func(m interface{}) (interface{}, error) {
-				return [][]ResultStub{{{Result: "3"}}}, nil
+				return [][]ResultStub{{{Result: "3", Stack: struct{Key string; Value string; ID uuid.UUID}{Key: "Yarik", Value: "Svitlitskyi", ID: uuid.New()}}}}, nil
 			})
 
 			go func() {
