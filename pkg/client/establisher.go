@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"reflect"
 	"sync"
@@ -34,11 +33,7 @@ func (e *establisher) establishConnection() error {
 		return err
 	}
 	e.conn = conn
-	if !e.ping() {
-
-		return fmt.Errorf("can't connect to %s", e.addr.String())
-	}
-	return nil
+	return err
 }
 
 func (e *establisher) ping() bool {
@@ -181,9 +176,9 @@ func (e *establisher) Close() error {
 	return e.conn.Close()
 }
 
-// func (e *establisher) IsConnected() bool{
-// 	return
-// }
+func (e *establisher) IsConnected() bool{
+	return e.ping()
+}
 
 func NewEstablisher(conf config.Config) (Dialer, error) {
 	e := &establisher{repeatCount: -1}

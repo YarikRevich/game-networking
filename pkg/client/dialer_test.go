@@ -65,6 +65,7 @@ func TestDialer(t *testing.T) {
 
 		g.It("Check if connection is ok", func() {
 			g.Assert(err).IsNil(err)
+			g.Assert(d.IsConnected()).IsTrue()
 		})
 
 		g.After(func() {
