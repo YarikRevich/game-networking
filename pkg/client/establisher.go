@@ -89,6 +89,7 @@ main:
 		e.repeatCount++
 
 		if e.repeatCount == 20 {
+			e.repeatCount = -1
 			return
 		}
 	write:
