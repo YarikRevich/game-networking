@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"net"
@@ -44,23 +43,21 @@ func (e *establisher) ping() bool {
 			logrus.Fatal(err)
 		}
 
-		if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 800)); err != nil {
+		if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
 			logrus.Fatal(err)
 		}
-		_, werr := e.conn.Write(b)
+		_, err = e.conn.Write(b)
+		if err != nil{
+			continue
+		}
 
-		if err := e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 800)); err != nil {
+		if err := e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
 			logrus.Fatal(err)
 		}
 		buff := make([]byte, len("ping"))
-		_, rerr := e.conn.Read(buff)
-
-		var we net.Error
-		var re net.Error
-		if errors.As(werr, &we) && errors.As(rerr, &re) {
-			if re.Timeout() || we.Timeout() {
-				continue
-			}
+		_, err = e.conn.Read(buff)
+		if err != nil{
+			continue
 		}
 
 		return true
@@ -144,6 +141,8 @@ main:
 				continue main
 			}
 
+			buff = buff[:n]
+
 			var e net.Error
 			if errors.As(err, &e) {
 				if e.Timeout() {
@@ -153,8 +152,6 @@ main:
 
 			break read
 		}
-
-		buff = bytes.Trim(buff, "\x00")
 
 		var p protocol.Protocol
 		err = json.Unmarshal(buff, &p)
