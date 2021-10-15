@@ -15,6 +15,6 @@ func init(){
 	logrus.SetOutput(os.Stderr)
 }
 
-func Dial(conf config.Config) Dialer {
+func Dial(conf config.Config) (Dialer, error) {
 	return NewEstablisher(conf)
 }

@@ -13,10 +13,10 @@ import (
 
 type ResultStub struct {
 	Result string
-	Stack struct {
-		Key string
+	Stack  struct {
+		Key   string
 		Value string
-		ID uuid.UUID
+		ID    uuid.UUID
 	}
 }
 
@@ -61,9 +61,13 @@ func TestDialer(t *testing.T) {
 			Port: "8090",
 		}
 
-		d := Dial(clientConfig)
+		d, err := Dial(clientConfig)
 
-		g.After(func(){
+		g.It("Check if connection is ok", func() {
+			g.Assert(err).IsNil(err)
+		})
+
+		g.After(func() {
 			time.Sleep(time.Second * 5)
 			g.Assert(d.Close()).IsNil()
 		})

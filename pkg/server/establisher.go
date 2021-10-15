@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
 	"net"
 	"os"
@@ -58,19 +57,19 @@ func (e *establisher) run() {
 		case <-e.surveyC.C:
 			buff := e.buffer.GetFromBuffer().([]byte)
 
-			_, addr, err := e.conn.ReadFromUDP(buff)
+			n, addr, err := e.conn.ReadFromUDP(buff)
 			if err != nil {
 				continue
 			}
+			buff = buff[:n]
 
 			if addr != nil {
-				buff = bytes.Trim(buff, "\x00")
-
 				var p protocol.Protocol
 
 				if err := json.Unmarshal(buff, &p); err != nil {
 					continue
 				}
+				
 
 				r, err := e.CallHandler(p.Procedure, p.Msg)
 				if err != nil{
@@ -109,6 +108,12 @@ func (e *establisher) WaitForInterrupt() error {
 	}
 }
 
+func (e *establisher) initDefaultHandlers(){
+	e.handlers["ping"] = func(data interface{}) (interface{}, error) {
+		return "ping", nil
+	} 
+}
+
 func (e *establisher) AddHandler(name string, callback func(data interface{}) (interface{}, error)) {
 	e.handlers[name] = callback
 }
@@ -135,6 +140,7 @@ func NewEstablisher(conf config.Config) Listener {
 	}
 	e.setConfig(conf)
 	e.establishListening()
+	e.initDefaultHandlers()
 	go e.run()
 	return e
 }

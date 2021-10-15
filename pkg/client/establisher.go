@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"sync"
@@ -22,15 +23,39 @@ type establisher struct {
 	sync.Mutex
 
 	addr *net.UDPAddr
-	conn *net.UDPConn
+	conn net.Conn
+
+	repeatCount int
 }
 
-func (e *establisher) establishConnection() {
-	conn, err := net.DialUDP("udp", nil, e.addr)
+func (e *establisher) establishConnection() error {
+	conn, err := net.Dial("udp", e.addr.String())
+	if err != nil {
+		return err
+	}
+	e.conn = conn
+	if !e.ping() {
+	
+		return fmt.Errorf("can't connect to %s", e.addr.String())
+	}
+	return nil
+}
+
+func (e *establisher) ping() bool {
+	m := protocol.Protocol{Procedure: "ping"}
+	b, err := json.Marshal(m)
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	e.conn = conn
+
+	_, err = e.conn.Write(b)
+	if err != nil {
+		return false
+	}
+
+	buff := make([]byte, len("ping"))
+	_, err = e.conn.Read(buff)
+	return err == nil
 }
 
 func (e *establisher) setConfig(conf config.Config) {
@@ -66,6 +91,11 @@ func (e *establisher) Call(procedure string, src interface{}, dst interface{}) {
 
 main:
 	for {
+		e.repeatCount++
+
+		if e.repeatCount == 20 {
+			return
+		}
 	write:
 		for {
 			if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
@@ -119,14 +149,13 @@ main:
 		if cap(buff) <= 40*1024 {
 			poolBuff.PutToBuffer(buff[:0])
 		}
-		// fmt.Println(string(buff))
 
-		var m struct {Msg json.RawMessage}
-		if err := json.Unmarshal(buff, &m); err != nil{
+		var m struct{ Msg json.RawMessage }
+		if err := json.Unmarshal(buff, &m); err != nil {
 			logrus.Fatal(err)
 		}
 
-		if err := json.Unmarshal(m.Msg, &dst); err != nil{
+		if err := json.Unmarshal(m.Msg, &dst); err != nil {
 			logrus.Fatal(err)
 		}
 
@@ -138,9 +167,15 @@ func (e *establisher) Close() error {
 	return e.conn.Close()
 }
 
-func NewEstablisher(conf config.Config) Dialer {
-	e := new(establisher)
+// func (e *establisher) IsConnected() bool{
+// 	return
+// }
+
+func NewEstablisher(conf config.Config) (Dialer, error) {
+	e := &establisher{repeatCount: -1}
 	e.setConfig(conf)
-	e.establishConnection()
-	return e
+	if err := e.establishConnection(); err != nil {
+		return nil, err
+	}
+	return e, nil
 }
