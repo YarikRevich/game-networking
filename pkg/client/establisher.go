@@ -37,31 +37,35 @@ func (e *establisher) establishConnection() error {
 }
 
 func (e *establisher) ping() bool {
-	for repeatCount := 0; repeatCount < 20; repeatCount++{
+	for repeatCount := 0; repeatCount < 20; repeatCount++ {
 		m := protocol.Protocol{Procedure: "ping"}
 		b, err := json.Marshal(m)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil{
+		if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 800)); err != nil {
 			logrus.Fatal(err)
 		}
 		_, werr := e.conn.Write(b)
 
+		if err := e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 800)); err != nil {
+			logrus.Fatal(err)
+		}
 		buff := make([]byte, len("ping"))
 		_, rerr := e.conn.Read(buff)
-		
+
 		var we net.Error
 		var re net.Error
-		if errors.As(werr, &we) && errors.As(rerr, &re){
-			if re.Timeout() || we.Timeout(){
+		if errors.As(werr, &we) && errors.As(rerr, &re) {
+			if re.Timeout() || we.Timeout() {
 				continue
 			}
 		}
 
 		return true
 	}
+
 	return false
 }
 
@@ -136,9 +140,6 @@ main:
 
 			var n int
 			n, err = e.conn.Read(buff)
-			if err != nil {
-				logrus.Fatal(err)
-			}
 			if n == 0 {
 				continue main
 			}
@@ -148,10 +149,6 @@ main:
 				if e.Timeout() {
 					continue read
 				}
-			}
-
-			if err != nil {
-				logrus.Fatal(err)
 			}
 
 			break read
