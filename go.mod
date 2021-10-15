@@ -9,6 +9,6 @@ require (
 	github.com/go-ping/ping v0.0.0-20210911151512-381826476871
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
-	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 )

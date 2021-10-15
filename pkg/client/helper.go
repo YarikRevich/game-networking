@@ -9,25 +9,22 @@ import (
 )
 
 func GenerateHashSum(src interface{}) ([sha256.Size]byte, error) {
-	var (
-		b   []byte
-		err error
-	)
 	if !reflect.ValueOf(src).IsValid() {
 		rint, err := rand.Int(rand.Reader, big.NewInt(100))
 		if err != nil {
 			return sha256.Sum256([]byte("")), err
 		}
-		b, err = json.Marshal(rint.String())
+		b, err := json.Marshal(rint.String())
 		if err != nil {
 			return sha256.Sum256([]byte("")), err
 		}
+		return sha256.Sum256(b), err
 
 	} else {
-		b, err = json.Marshal(src)
+		b, err := json.Marshal(src)
 		if err != nil {
 			return sha256.Sum256([]byte("")), err
 		}
+		return sha256.Sum256(b), err
 	}
-	return sha256.Sum256(b), err
 }

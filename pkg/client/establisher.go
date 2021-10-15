@@ -35,7 +35,7 @@ func (e *establisher) establishConnection() error {
 	}
 	e.conn = conn
 	if !e.ping() {
-	
+
 		return fmt.Errorf("can't connect to %s", e.addr.String())
 	}
 	return nil
@@ -98,14 +98,19 @@ main:
 		}
 	write:
 		for {
-			if err := e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+			if err = e.conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
 				logrus.Fatal(err)
 			}
 
 			_, err = e.conn.Write(b)
-			if err, ok := err.(net.Error); ok && err.Timeout() {
-				continue write
+
+			var e net.Error
+			if errors.As(err, &e) {
+				if e.Timeout() {
+					continue write
+				}
 			}
+
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -117,17 +122,26 @@ main:
 
 	read:
 		for {
-			if err := e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
+			if err = e.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 500)); err != nil {
 				logrus.Fatal(err)
 			}
 
-			n, err := e.conn.Read(buff)
-			if n == 0 {
+			var n int
+			n, err = e.conn.Read(buff)
+			if err != nil{
+				logrus.Fatal(err)
+			}
+			if n == 0{
 				continue main
 			}
-			if err, ok := err.(net.Error); ok && err.Timeout() {
-				continue read
+
+			var e net.Error
+			if errors.As(err, &e) {
+				if e.Timeout() {
+					continue read
+				}
 			}
+
 			if err != nil {
 				logrus.Fatal(err)
 			}

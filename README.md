@@ -1,8 +1,8 @@
-#Game-Networing
+#Game-Networking
 ---
 ![](https://goreportcard.com/badge/github.com/YarikRevich/game-networking)
 ---
-It's a game-networking framework made to make the life of Golang-Game-Devs easier
+It's a game-networking low-weight library made to make the life of Golang-Game-Devs easier
 ---
 #Features
  - Client for UDP with superstructures
